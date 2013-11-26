@@ -6,13 +6,13 @@
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
 DLHOST="http://us.download.nvidia.com" #use this mirror
 
-error() {
-	echo "Error: $1"
-	exit 1
-}
+# binary dependency array
+DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed')
+
+# error func
+error() { echo "Error: $1"; exit 1; }
 
 # check for binary dependencies
-DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed')
 for i in "${DEPS[@]}"; do
 	hash $i 2>/dev/null || error "dependency not found :: $i"
 done
@@ -21,7 +21,6 @@ done
 [[ -d "$DOWNLOADDIR" ]] || error "Directory not found \"$DOWNLOADDIR\""
 
 # ask function
-# takes -y option for auto yes
 ask() {
 	while true; do
 		if [[ "${2:-}" = "Y" ]]; then prompt="Y/n"; default=Y
@@ -37,7 +36,7 @@ ask() {
 	done
 }
 
-# hard defaults no edit
+# default nvidia starting link
 LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
 
 # file data query
