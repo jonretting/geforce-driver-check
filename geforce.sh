@@ -2,11 +2,19 @@
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
 
 #cutomizable defaults
-DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
+DOWNLOADDIR="/cygdrive/e/Downloads1" #download into this directory
 DLHOST="http://us.download.nvidia.com" #use this mirror
 
+error() {
+	echo "Error: $1"
+	exit 1
+}
+
 # check for PnPutil.exe
-hash PnPutil || { echo "Fatal Error"; exit 1; }
+hash PnPutil || error "Fatal"
+
+# check if DOWNLOADDIR exists
+[[ -d "$DOWNLOADDIR" ]] || error "Directory not found $DOWNLOADDIR"
 
 # ask function
 # takes -y option for auto yes
@@ -45,9 +53,11 @@ if [[ $NVERSION -gt $CVERSION ]]; then
 	echo "Current: $CURRENTVER"
 	echo -e "Latest:  $NEWVER"
 	echo "Downloading latest version..."
-	cd "/cygdrive/e/Downloads"
-	wget -N "$DLURI"
+	cd "$DOWNLOADDIR"
+	wget -N "$DLURI" || error "Downloading $DLURI"
 	ask "Install now?" && cygstart "$FILENAME"
+	exit 0
 else
 	echo "Already latest version: $CURRENTVER"
+	exit 0
 fi
