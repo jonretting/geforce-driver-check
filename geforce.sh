@@ -58,7 +58,7 @@ CURRENTVER=$(PnPutil.exe -e | grep -A 3 "NVIDIA" | grep -A 1 "Display" | awk '/v
 # store full uri
 DLURI="${DLHOST}${FILEDATA}"
 
-if [[ $LATESTVER -eq $CURRENTVER ]]; then
+if [[ $LATESTVER -gt $CURRENTVER ]]; then
 	echo "New version available!"
 	echo "Current: $CURRENTVER"
 	echo -e "Latest:  $LATESTVER"
