@@ -9,6 +9,14 @@ DLHOST="http://us.download.nvidia.com" #use this mirror
 # binary dependency array
 DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed')
 
+# clear vars *no edit
+LINK=
+FILEDATA=
+FILENAME=
+LATESTVER=
+CURRENTVER=
+DLURI=
+
 # error func
 error() { echo "Error: $1"; exit 1; }
 
