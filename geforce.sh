@@ -30,7 +30,7 @@ ask() {
 
 # check binary dependencies
 for i in "${DEPS[@]}"; do
-	hash $i 2>/dev/null || error "dependency not found :: $i"
+	hash $i 2>/dev/null || error "Dependency not found :: $i"
 done
 
 # check if DOWNLOADDIR exists
