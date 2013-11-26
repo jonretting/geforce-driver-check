@@ -30,7 +30,7 @@ ask() {
 		if [[ "$1" = "-y" ]]; then REPLY=Y; default=Y
 		else echo -ne "$1 "; read -p "[$prompt] " REPLY; [[ -z "$REPLY" ]] && REPLY=$default
 		fi
-		case "$REPLY" in # Check if the reply is valid
+		case "$REPLY" in
 			Y*|y*) return 0 ;; N*|n*) return 1 ;;
 		esac
 	done
