@@ -62,7 +62,7 @@ if [[ $LATESTVER -gt $CURRENTVER ]]; then
 	echo "New version available!"
 	echo "Current: $CURRENTVER"
 	echo -e "Latest:  $LATESTVER"
-	echo "Downloading latest version..."
+	echo "Downloading latest version into \"$DOWNLOADDIR\"...."
 	cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 	wget -N "$DLURI" || error "Downloading file \"$DLURI\""
 	ask "Install new version ($LATESTVER) now?" && cygstart "$FILENAME"
