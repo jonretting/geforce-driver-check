@@ -1,14 +1,27 @@
 Nvidia Display Driver update checker script
 By: Jon Retting
 
+INFO:
 - Currently supports only for Windows 7 x64 and Windows 8 x64
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
 - Prompts to launch downloaded new version executable
 
-Specify download folder by changing $DOWNLOADDIR="/directory"
+CONFIGURE:
+- Specify download folder by changing $DOWNLOADDIR="/directory"
 
-Todo: - add notification switch when update is available
-      - make crontab friendly
-      - allow for other types ex: x86 version, only whql
-      - verify system os and architecture
+RUNNING:
+- execute by bashing geforce.sh
+  examples: 
+    ./geforce.sh
+    /dir/geforce-driver-update/geforce.sh
+    alias geforce='/dir/geforce-driver-update/geforce.sh'
+    ln -s "/dir/geforce-driver-update/geforce.sh" /usr/bin/geforce.sh
+    bash geforce.sh
+    bash /dir/geforce-driver-update/geforce.sh
+
+TODO: 
+- add notification switch when update is available
+- make crontab friendly
+- allow for other types ex: x86 version, only whql
+- verify system os and architecture
