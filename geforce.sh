@@ -1,6 +1,9 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
+# todo: add notification switch when update is available
+# todo: make crontab friendly
+# todo: allow for other types ex: x86 version, only whql
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
@@ -11,14 +14,6 @@ DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed')
 
 # error func
 error() { echo "Error: $1"; exit 1; }
-
-# check for binary dependencies
-for i in "${DEPS[@]}"; do
-	hash $i 2>/dev/null || error "dependency not found :: $i"
-done
-
-# check if DOWNLOADDIR exists
-[[ -d "$DOWNLOADDIR" ]] || error "Directory not found \"$DOWNLOADDIR\""
 
 # ask function
 ask() {
@@ -35,6 +30,14 @@ ask() {
 		esac
 	done
 }
+
+# check binary dependencies
+for i in "${DEPS[@]}"; do
+	hash $i 2>/dev/null || error "dependency not found :: $i"
+done
+
+# check if DOWNLOADDIR exists
+[[ -d "$DOWNLOADDIR" ]] || error "Directory not found \"$DOWNLOADDIR\""
 
 # default nvidia starting link
 LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
