@@ -1,9 +1,6 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
-# todo: add notification switch when update is available
-# todo: make crontab friendly
-# todo: allow for other types ex: x86 version, only whql
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
