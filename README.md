@@ -48,7 +48,7 @@ OPTIONS:
 	-V    Displays version info
 	-h    this crupt
 
-	See INFO for mo information
+	See INFO for more information
 
 
 TODO:
