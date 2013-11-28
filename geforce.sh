@@ -188,7 +188,7 @@ $ATTENDED && SETUPARGS=
 
 # run the installer with args
 echo -ne "Executing installer setup..."
-cygstart -w "$EXTRACTSUBDIR/setup.exe" "$SETUPARGS" || error "Installation failed or user interupted!"
+cygstart -w "$EXTRACTSUBDIR/setup.exe" "$SETUPARGS" || error "Installation failed or user interupted"
 echo "Done"
 
 # remove old oem inf package
