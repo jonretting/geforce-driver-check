@@ -1,7 +1,7 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
-VERSION="1.0"
+VERSION="1.01"
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
@@ -11,7 +11,6 @@ DLHOST="http://us.download.nvidia.com" #use this mirror
 LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
 EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 SETUPARGS="-nofinish -passive -nosplash -noeula -n" #-n noreboot
-ROOTPATH="/cygdrive/c"	#$(cygpath -W | sed -e "s/\/Windows//")
 CWD=$PWD
 
 # clear default vars
@@ -130,6 +129,9 @@ if [[ $(echo "$REMOEMS" | wc -l) -gt 1 ]]; then
 		PnPutil -d $REOEM >/dev/null || OLDOEMINF="$REOEM"
 	done
 fi
+
+# defaults that use deps
+ROOTPATH=$(cygpath -W | sed -e "s/\/Windows//")
 
 # file data query
 FILEDATA=$(wget -qO- "$(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1)" | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
