@@ -139,6 +139,7 @@ FILEDATA=$(wget -qO- "$(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}
 FILENAME=$(echo "$FILEDATA" | cut -d '/' -f4)
 [[ $FILENAME == *.exe ]] || error "Unexpected FILENAME returned :: $FILENAME"
 
+
 # get latest version
 LATESTVER=$(echo "$FILEDATA" | cut -d '/' -f3 | sed -e "s/\.//")
 [[ $LATESTVER =~ ^[0-9]+$ ]] || error "LATESTVER not a number :: $LATESTVER"
@@ -156,6 +157,7 @@ CURRENTVERNAME=$(echo $CURRENTVER | sed 's/./.&/4')
 # store full uri
 DLURI="${DLHOST}${FILEDATA}"
 
+
 # check versions
 if [[ $CURRENTVER -eq $LATESTVER ]]; then
 	$CHECKONLY && exit 1
@@ -170,7 +172,7 @@ Current: $CURRENTVERNAME
 Latest:  $LATESTVERNAME
 Downloading latest version into \"$DOWNLOADDIR\"...."
 cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
-wget -N "$DLURI" || error "Downloading file \"$DLURI\""
+wget -N "$DLURI" || error "wget downloading file \"$DLURI\""
 
 # ask to isntall
 ask "Extract and Install new version ($LATESTVERNAME) now?" || { echo "User cancelled"; exit 0; }
