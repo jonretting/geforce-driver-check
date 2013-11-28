@@ -1,17 +1,20 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
-VERSION="0.04"
+VERSION="0.08"
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
 DLHOST="http://us.download.nvidia.com" #use this mirror
 
-# binary dependency array
-DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed' 'wc' 'find' '7z' 'cygpath' 'ln' 'which')
-
 # default vars
 LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
+EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay"
+SETUPARGS="-nosplash -noeula -n"
+ROOTPATH="/cygdrive/c"	#$(cygpath -W | sed -e "s/\/Windows//")
+CWD=$PWD
+
+# clear default vars
 FILEDATA=
 FILENAME=
 LATESTVER=
@@ -19,19 +22,20 @@ REMOEMS=
 OLDOEMINF=
 CURRENTVER=
 DLURI=
-SILENT=false
-YES=false
-CWD=$PWD
 SEVENZIP=
 BINPATH=
+EXTRACTSUBDIR=
+LATESTVERNAME= #adds decimal
+CURRENTVERNAME= #adds decimal
+
+# default flags
+SILENT=false
+YES=false
 USE7ZPATH=false
 CHECKONLY=false
-ROOTPATH="/cygdrive/c"	#$(cygpath -W | sed -e "s/\/Windows//")
-EXTRACTSUBDIR=
-EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay"
-SETUPARGS="-nosplash -noeula -n"
-LATESTVERNAME= #friendly with decimal
-CURRENTVERNAME= #friendly with decimal
+
+# binary dependency array
+DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'tail' 'sed' 'wc' 'find' '7z' 'cygpath' 'ln' 'which')
 
 error() { echo "Error: $1"; exit 1; }
 
