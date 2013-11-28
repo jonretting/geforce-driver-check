@@ -125,7 +125,7 @@ checkdir "$DOWNLOADDIR" || error "Directory not found \"$DOWNLOADDIR\""
 REMOEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
 if [[ $(echo "$REMOEMS" | wc -l) -gt 1 ]]; then
 	for REOEM in $REMOEMS; do
-		[[ $REOEM == oem*.inf ]] || error "removing in unused oem*.inf file :: $REOEM"
+		[[ $REOEM == oem*.inf ]] || error "Unexpected value in REOEMS array :: $REOEM"
 		PnPutil -d $REOEM >/dev/null || OLDOEMINF="$REOEM"
 	done
 fi
@@ -145,7 +145,7 @@ LATESTVERNAME=$(echo $LATESTVER| sed 's/./.&/4')
 
 # get current version
 CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
-[[ $CURRENTVER =~ ^[0-9]+$ ]] || error "CURRENTVER not a number or multistring :: $CURRENTVER"
+[[ $CURRENTVER =~ ^[0-9]+$ ]] || error "CURRENTVER not a number :: $CURRENTVER"
 CURRENTVERNAME=$(echo $CURRENTVER | sed 's/./.&/4')
 
 # old oem*.inf file if not already detected
