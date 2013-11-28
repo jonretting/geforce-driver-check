@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Checks for newer Nvidia Display Driver then installs silently or with many more options
 
-# Copyright (c) Jon Retting
+# Copyright (c) 2013 Jon Retting
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
