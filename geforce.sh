@@ -79,8 +79,10 @@ if [[ $LATESTVER -gt $CURRENTVER ]]; then
 	cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 	wget -N "$DLURI" || error "Downloading file \"$DLURI\""
 	ask "Install new version ($LATESTVER) now?" && 
-	cygstart -w "$FILENAME" &&
-	PnPutil -d $OLDOEMINF && exit 0 || exit 1
+	cygstart -w "$FILENAME" || error "Installation failed or user interupted!"
+	echo "Removing old driver package..."
+	PnPutil -d $OLDOEMINF >/dev/null || exit 1
+	exit 0
 else
 	echo "Already latest version: $CURRENTVER"
 	exit 0
