@@ -54,6 +54,10 @@ ask() {
 	done
 }
 
+checkdir() {
+	[[ -d "$1" ]] && return 0 || return 1
+}
+
 #needs cleanup/optimization/abstraction
 find7z() {
 	if [[ -d "${ROOTPATH}/Program Files" ]]; then
@@ -85,16 +89,18 @@ Usage: geforce.sh [-s] [-y]
 Example: geforce.sh
 -s    Silent install (install new version without the Nvidia GUI)
 -y    Answer 'yes' to all prompts
+-d    Specify download location
 -C    Only check for new version (returns version#, 0=update available, 1=no update)
 -V    Displays version info
 -h    this crupt
 Version: ${VERSION}"
 }
 
-while getopts syhVC OPTIONS; do
+while getopts syhVCd: OPTIONS; do
 	case "${OPTIONS}" in
 		s) SILENT=true	;;
 		y) YES=true	;;
+		d) DOWNLOADDIR="$OPTARG"	;;
 		V) usage | tail -n 1; exit 0	;;
 		C) CHECKONLY=true	;;
 		h) usage; exit 0	;;
@@ -114,7 +120,7 @@ for i in "${DEPS[@]}"; do
 done
 
 # check if DOWNLOADDIR exists
-[[ -d "$DOWNLOADDIR" ]] || error "Directory not found \"$DOWNLOADDIR\""
+checkdir "$DOWNLOADDIR" || error "Directory not found \"$DOWNLOADDIR\""
 
 # remove unused oem*.inf packages and set OLDOEMINF from in use
 REMOEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
