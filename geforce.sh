@@ -199,6 +199,6 @@ echo "Done"
 # final check verify new version
 CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
 [[ $CURRENTVER -eq $LATESTVER ]] || error "After all that your driver version didn't change!"
-echo "Driver installation successfull!"
+echo "Driver update successfull!"
 
 exit 0
