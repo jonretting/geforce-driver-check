@@ -27,10 +27,12 @@ RUNNING:
     bash /dir/geforce-driver-update/geforce.sh
 
 USSAGE: geforce.sh [-s] [-y]
+    -a    Attended install (user must traverse Nvidia setup GUI)
     -s    Silent install (dont show Nvidia progress bar)
     -y    Answer 'yes' to all prompts
     -d    Specify download location
     -C    Only check for new version (returns version#, 0=update available, 1=no update)
+    -A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
     -V    Displays version info
     -h    this crupt
 

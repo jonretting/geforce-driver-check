@@ -87,7 +87,7 @@ Example: geforce.sh
 -y    Answer 'yes' to all prompts
 -d    Specify download location
 -C    Only check for new version (returns version#, 0=update available, 1=no update)
--A    Enable all Nvidia Driver packages (GFExperience, NV3DVision, etc), autoenables Attended install (-a)
+-A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
 -V    Displays version info
 -h    this crupt
 Version: ${VERSION}"
