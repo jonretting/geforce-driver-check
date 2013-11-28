@@ -1,7 +1,7 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
-VERSION="0.085"
+VERSION="0.10"
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
@@ -9,8 +9,8 @@ DLHOST="http://us.download.nvidia.com" #use this mirror
 
 # default vars
 LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
-EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay"
-SETUPARGS="-nosplash -noeula -n" #-n noreboot
+EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
+SETUPARGS="-nofinish -passive -nosplash -noeula -n" #-n noreboot
 ROOTPATH="/cygdrive/c"	#$(cygpath -W | sed -e "s/\/Windows//")
 CWD=$PWD
 
@@ -87,7 +87,7 @@ usage() {
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
 Usage: geforce.sh [-s] [-y]
 Example: geforce.sh
--s    Silent install (install new version without the Nvidia GUI)
+-s    Silent install (dont show Nvidia progress bar)
 -y    Answer 'yes' to all prompts
 -d    Specify download location
 -C    Only check for new version (returns version#, 0=update available, 1=no update)
