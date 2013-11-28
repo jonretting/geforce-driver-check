@@ -176,7 +176,7 @@ wget -N "$DLURI" || error "Downloading file \"$DLURI\""
 ask "Extract and Install new version ($LATESTVERNAME) now?" || { echo "User cancelled"; exit 0; }
 
 # unarchive new version download
-[[ -d "${ROOTPATH}/NVIDIA" ]] || mkdir "${ROOTPATH}/MVIDIA" || error "creating directory :: \"$ROOTPATH/MVIDIA\""
+[[ -d "${ROOTPATH}/NVIDIA" ]] || mkdir "${ROOTPATH}/NVIDIA" || error "creating directory :: \"$ROOTPATH/NVIDIA\""
 EXTRACTSUBDIR="${ROOTPATH}/NVIDIA/GDC-${LATESTVERNAME}"
 echo -ne "Extracting new driver archive..."
 [[ -d "$EXTRACTSUBDIR" ]] && rm -rf "$EXTRACTSUBDIR"
