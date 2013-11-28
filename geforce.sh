@@ -1,7 +1,7 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
-VERSION="0.08"
+VERSION="0.085"
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
@@ -119,7 +119,7 @@ for i in "${DEPS[@]}"; do
 	fi
 done
 
-# check if DOWNLOADDIR exists
+# check default download directory
 checkdir "$DOWNLOADDIR" || error "Directory not found \"$DOWNLOADDIR\""
 
 # remove unused oem*.inf packages and set OLDOEMINF from in use
