@@ -67,7 +67,6 @@ CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVI
 OLDOEMINF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENTVER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
 [[ $OLDOEMINF == oem*.inf ]] || error "Old oem*.inf file :: $OLDOEMINF"
 
-
 # store full uri
 DLURI="${DLHOST}${FILEDATA}"
 
@@ -81,7 +80,7 @@ if [[ $LATESTVER -gt $CURRENTVER ]]; then
 	ask "Install new version ($LATESTVER) now?" && 
 	cygstart -w "$FILENAME" || error "Installation failed or user interupted!"
 	echo "Removing old driver package..."
-	PnPutil -d $OLDOEMINF >/dev/null || exit 1
+	PnPutil -d $OLDOEMINF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLDOEMINF"
 	exit 0
 else
 	echo "Already latest version: $CURRENTVER"
