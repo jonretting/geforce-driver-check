@@ -81,22 +81,20 @@ CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVI
 DLURI="${DLHOST}${FILEDATA}"
 
 #check versions
-[[ $LATESTVER -eq $CURRENTVER ]] && { echo "Already latest version: $CURRENTVER"; exit 0; }
+[[ $LATESTVER -le $CURRENTVER ]] && { echo "Already latest version: $(echo $CURRENTVER| sed 's/./.&/3')"; exit 0; }
 
 #run tasks
 echo -e "New version available!
-Current: $CURRENTVER
-Latest:  $LATESTVER
+Current: $(echo $CURRENTVER | sed 's/./.&/3')
+Latest:  $(echo $LATESTVER | sed 's/./.&/3')
 Downloading latest version into \"$DOWNLOADDIR\"...."
-
-#download and run
 cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 wget -N "$DLURI" || error "Downloading file \"$DLURI\""
-ask "Install new version ($LATESTVER) now?" && 
+ask "Install new version ($LATESTVER) now?" &&
 cygstart -w "$FILENAME" || error "Installation failed or user interupted!"
-
-#remove old oem inf driver package
-echo "Removing old driver package..."
+echo -ne "Removing old driver package..."
 PnPutil -d $OLDOEMINF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLDOEMINF"
+echo "Done"
+echo "Driver installation successfull!"
 
 exit 0
