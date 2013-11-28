@@ -10,6 +10,7 @@ DLHOST="http://us.download.nvidia.com" #use this mirror
 DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed' 'wc')
 
 # clear vars *no edit
+VERSION="0.04"
 LINK=
 FILEDATA=
 FILENAME=
@@ -18,6 +19,8 @@ REMOEMS=
 OLDOEMINF=
 CURRENTVER=
 DLURI=
+SILENT=false
+YES=false
 
 # error func
 error() { echo "Error: $1"; exit 1; }
@@ -38,6 +41,18 @@ ask() {
 	done
 }
 
+usage() {
+	echo "Geforce Driver Check
+Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
+Usage: geforce.sh [-s] [-y]
+Example: geforce.sh
+-s    Silent install (install new version without the Nvidia GUI)
+-y    Answer 'yes' to all prompts
+-V    Displays version info
+-h    this crupt
+Version: ${VERSION}"
+}
+
 # check binary dependencies
 for i in "${DEPS[@]}"; do
 	hash $i 2>/dev/null || error "Dependency not found :: $i"
@@ -45,6 +60,17 @@ done
 
 # check if DOWNLOADDIR exists
 [[ -d "$DOWNLOADDIR" ]] || error "Directory not found \"$DOWNLOADDIR\""
+
+while getopts syhV OPTIONS; do
+	case "${OPTIONS}" in
+		s) SILENT=true	;;
+		y) YES=true	;;
+		V) usage | tail -n 1; exit 0	;;
+		h) usage; exit 0	;;
+		*) usage; exit 1	;;
+	esac
+done
+shift $(($OPTIND -1))
 
 # remove unused oem*.inf packages and set OLDOEMINF from in use
 REMOEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
@@ -82,12 +108,12 @@ CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVI
 DLURI="${DLHOST}${FILEDATA}"
 
 #check versions
-[[ $LATESTVER -le $CURRENTVER ]] && { echo "Already latest version: $(echo $CURRENTVER| sed 's/./.&/3')"; exit 0; }
+[[ $LATESTVER -le $CURRENTVER ]] && { echo "Already latest version: $(echo $CURRENTVER| sed 's/./.&/4')"; exit 0; }
 
 #run tasks
 echo -e "New version available!
-Current: $(echo $CURRENTVER | sed 's/./.&/3')
-Latest:  $(echo $LATESTVER | sed 's/./.&/3')
+Current: $(echo $CURRENTVER | sed 's/./.&/4')
+Latest:  $(echo $LATESTVER | sed 's/./.&/4')
 Downloading latest version into \"$DOWNLOADDIR\"...."
 cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 wget -N "$DLURI" || error "Downloading file \"$DLURI\""
