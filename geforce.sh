@@ -26,8 +26,10 @@ CWD=$PWD
 SEVENZIP=
 BINPATH=
 USE7ZPATH=false
-ROOTPATH=$(cygpath -W | cut -d '/' -f1-3) #usually /cygdrive/c
+ROOTPATH="/cygdrive/c"	#$(cygpath -W | sed -e "s/\/Windows//")
 EXTRACTSUBDIR=
+EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay"
+SETUPARGS="-nosplash -noeula -n"
 
 error() { echo "Error: $1"; exit 1; }
 
@@ -37,7 +39,7 @@ ask() {
 		elif [[ "${2:-}" = "N" ]]; then prompt="y/N"; default=N
 		else prompt="y/n"; default=;
 		fi
-		if [[ "$1" = "-y" ]]; then REPLY=Y; default=Y #need debug
+		if $YES; then REPLY=Y; default=Y #need debug
 		else echo -ne "$1 "; read -p "[$prompt] " REPLY; [[ -z "$REPLY" ]] && REPLY=$default
 		fi
 		case "$REPLY" in
@@ -141,10 +143,10 @@ CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVI
 # store full uri
 DLURI="${DLHOST}${FILEDATA}"
 
-#check versions
+# check versions
 #[[ $LATESTVER -lt $CURRENTVER ]] && { echo "Already latest version: $(echo $CURRENTVER| sed 's/./.&/4')"; exit 0; }
 
-#run tasks
+# run tasks
 echo -e "New version available!
 Current: $(echo $CURRENTVER | sed 's/./.&/4')
 Latest:  $(echo $LATESTVER | sed 's/./.&/4')
@@ -152,23 +154,33 @@ Downloading latest version into \"$DOWNLOADDIR\"...."
 cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 wget -N "$DLURI" || error "Downloading file \"$DLURI\""
 
-#unarchive new version download
+# ask to isntall
+ask "Extract and Install new version ($LATESTVER) now?" || exit 0
+
+# unarchive new version download
 [[ -d "${ROOTPATH}/NVIDIA" ]] || mkdir "${ROOTPATH}/MVIDIA" || error "creating directory :: \"$ROOTPATH/MVIDIA\""
 EXTRACTSUBDIR="${ROOTPATH}/NVIDIA/GDC-$(echo $LATESTVER | sed 's/./.&/4')"
 echo -ne "Extracting new driver archive..."
-7z x "$(cygpath -wap "${DOWNLOADDIR}/${FILENAME}")" -o"$(cygpath -wap "${EXTRACTSUBDIR}")" >/dev/null
-echo $?
+[[ -d "$EXTRACTSUBDIR" ]] && rm -rf "$EXTRACTSUBDIR"
+7z x "$(cygpath -wap "${DOWNLOADDIR}/${FILENAME}")" -o"$(cygpath -wap "${EXTRACTSUBDIR}")" $EXCLUDEPKGS >/dev/null || error "extracting new download"
 echo "Done"
 
+# create setup.exe options args
+$SILENT && SETUPARGS+=" -s"
 
-exit 0
+# run the installer with args
+cygstart -w "$EXTRACTSUBDIR/setup.exe" $SETUPARGS || error "Installation failed or user interupted!"
 
-
-ask "Install new version ($LATESTVER) now?" &&
-cygstart -w "$FILENAME" || error "Installation failed or user interupted!"
+# remove old oem inf package
 echo -ne "Removing old driver package..."
 PnPutil -d $OLDOEMINF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLDOEMINF"
 echo "Done"
 echo "Driver installation successfull!"
+exit 0
+
+
+ask "Install new version ($LATESTVER) now?" &&
+cygstart -w "$FILENAME" 
+
 
 exit 0
