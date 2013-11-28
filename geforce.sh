@@ -8,7 +8,7 @@ DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
 DLHOST="http://us.download.nvidia.com" #use this mirror
 
 # binary dependency array
-DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed' 'wc' 'find' '7z' 'cygpath' 'ln')
+DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed' 'wc' 'find' '7z' 'cygpath' 'ln' 'which')
 
 # clear vars *no edit
 
@@ -46,6 +46,7 @@ ask() {
 	done
 }
 
+#needs cleanup/optimization/abstraction
 find7z() {
 	local path=$(cygpath -W | cut -d '/' -f1-3)
 	if [[ -d "${path}/Program Files" ]]; then
@@ -54,15 +55,15 @@ find7z() {
 		[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVENZIP="${PWD}/${find}/7z.exe"
 		cd "$CWD"
 	fi
-	if [[ -z $7ZIP ]] && [[ -d "${path}/Program Files (x86)" ]]; then
+	if [[ -z $SEVENZIP ]] && [[ -d "${path}/Program Files (x86)" ]]; then
 		cd "${path}/Program Files (x86)"
 		local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
 		[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVENZIP="${PWD}/${find}/7z.exe"
 		cd "$CWD"
 	fi
-	[[ -z $SEVENZIP ]] && error "can't find 7-Zip installation"
+	[[ -z $SEVENZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
 	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
-		BINPATH=$(which ln | sed -e "s/\/ln//")
+		local BINPATH=$(which ln | sed -e "s/\/ln//")
 		[[ -d "$BINPATH" ]] && ln -s "$SEVENZIP" "$BINPATH"
 	fi
 	return 0
@@ -95,7 +96,7 @@ shift $(($OPTIND -1))
 for i in "${DEPS[@]}"; do
 	#7zip check and create symlink
 	if [[ $i == '7z' ]]; then
-		hash $i 2>/dev/null || find7z && hash $i 2> || USE7ZPATH=true
+		hash $i 2>/dev/null || find7z && hash $i 2>/dev/null || USE7ZPATH=true
 	else
 		hash $i 2>/dev/null || error "Dependency not found :: $i"
 	fi
