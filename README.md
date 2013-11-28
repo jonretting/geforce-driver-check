@@ -57,5 +57,5 @@ TODO:
 - make crontab friendly
 - allow for other types ex: x86 version, only whql
 - verify system os and architecture
-- support internation driver version option
+- support international driver version option
 - specify root path as option
