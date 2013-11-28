@@ -1,7 +1,7 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
-VERSION="1.01"
+VERSION="1.011"
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
@@ -200,7 +200,7 @@ echo -ne "Removing old driver package..."
 PnPutil -d $OLDOEMINF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLDOEMINF"
 echo "Done"
 
-# put final checks here verify new version
+# final check verify new version
 CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
 [[ $CURRENTVER -eq $LATESTVER ]] || error "After all that your driver version didn't change!"
 echo "Driver installation successfull!"
