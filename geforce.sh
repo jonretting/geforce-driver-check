@@ -65,6 +65,8 @@ find7z() {
 	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
 		local BINPATH=$(which ln | sed -e "s/\/ln//")
 		[[ -d "$BINPATH" ]] && ln -s "$SEVENZIP" "$BINPATH"
+	else
+		USE7ZPATH=true
 	fi
 	return 0
 }
@@ -96,7 +98,7 @@ shift $(($OPTIND -1))
 for i in "${DEPS[@]}"; do
 	#7zip check and create symlink
 	if [[ $i == '7z' ]]; then
-		hash $i 2>/dev/null || find7z && hash $i 2>/dev/null || USE7ZPATH=true
+		hash $i 2>/dev/null || find7z
 	else
 		hash $i 2>/dev/null || error "Dependency not found :: $i"
 	fi
