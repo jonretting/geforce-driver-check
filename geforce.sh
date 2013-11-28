@@ -1,16 +1,17 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
+VERSION="0.04"
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
 DLHOST="http://us.download.nvidia.com" #use this mirror
 
 # binary dependency array
-DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed' 'wc')
+DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed' 'wc' 'find' '7z' 'cygpath' 'ln')
 
 # clear vars *no edit
-VERSION="0.04"
+
 LINK=
 FILEDATA=
 FILENAME=
@@ -21,6 +22,10 @@ CURRENTVER=
 DLURI=
 SILENT=false
 YES=false
+CWD=$PWD
+SEVENZIP=
+BINPATH=
+USE7ZPATH=false
 
 # error func
 error() { echo "Error: $1"; exit 1; }
@@ -41,6 +46,28 @@ ask() {
 	done
 }
 
+find7z() {
+	local path=$(cygpath -W | cut -d '/' -f1-3)
+	if [[ -d "${path}/Program Files" ]]; then
+		cd "${path}/Program Files"
+		local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
+		[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVENZIP="${PWD}/${find}/7z.exe"
+		cd "$CWD"
+	fi
+	if [[ -z $7ZIP ]] && [[ -d "${path}/Program Files (x86)" ]]; then
+		cd "${path}/Program Files (x86)"
+		local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
+		[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVENZIP="${PWD}/${find}/7z.exe"
+		cd "$CWD"
+	fi
+	[[ -z $SEVENZIP ]] && error "can't find 7-Zip installation"
+	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
+		BINPATH=$(which ln | sed -e "s/\/ln//")
+		[[ -d "$BINPATH" ]] && ln -s "$SEVENZIP" "$BINPATH"
+	fi
+	return 0
+}
+
 usage() {
 	echo "Geforce Driver Check
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
@@ -53,14 +80,6 @@ Example: geforce.sh
 Version: ${VERSION}"
 }
 
-# check binary dependencies
-for i in "${DEPS[@]}"; do
-	hash $i 2>/dev/null || error "Dependency not found :: $i"
-done
-
-# check if DOWNLOADDIR exists
-[[ -d "$DOWNLOADDIR" ]] || error "Directory not found \"$DOWNLOADDIR\""
-
 while getopts syhV OPTIONS; do
 	case "${OPTIONS}" in
 		s) SILENT=true	;;
@@ -71,6 +90,19 @@ while getopts syhV OPTIONS; do
 	esac
 done
 shift $(($OPTIND -1))
+
+# check binary dependencies
+for i in "${DEPS[@]}"; do
+	#7zip check and create symlink
+	if [[ $i == '7z' ]]; then
+		hash $i 2>/dev/null || find7z && hash $i 2> || USE7ZPATH=true
+	else
+		hash $i 2>/dev/null || error "Dependency not found :: $i"
+	fi
+done
+
+# check if DOWNLOADDIR exists
+[[ -d "$DOWNLOADDIR" ]] || error "Directory not found \"$DOWNLOADDIR\""
 
 # remove unused oem*.inf packages and set OLDOEMINF from in use
 REMOEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
