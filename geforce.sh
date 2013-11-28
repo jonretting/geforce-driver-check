@@ -33,6 +33,7 @@ YES=false
 USE7ZPATH=false
 CHECKONLY=false
 ATTENDED=false
+CLEANINSTALL=false
 
 # binary dependency array
 DEPS=('PnPutil' 'wget' '7z' 'cygpath')
@@ -85,6 +86,7 @@ Example: geforce.sh
 -a    Attended install (user must traverse Nvidia setup GUI)
 -s    Silent install (dont show Nvidia progress bar)
 -y    Answer 'yes' to all prompts
+-c    Clean install (removes all saved profiles and settings)
 -d    Specify download location
 -C    Only check for new version (returns version#, 0=update available, 1=no update)
 -A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
@@ -93,12 +95,13 @@ Example: geforce.sh
 Version: ${VERSION}"
 }
 
-while getopts asyhVCAd: OPTIONS; do
+while getopts asyhVcCAd: OPTIONS; do
 	case "${OPTIONS}" in
 		a) ATTENDED=true	;;
 		s) SILENT=true		;;
 		y) YES=true			;;
 		d) DOWNLOADDIR="$OPTARG"	;;
+		c) CLEANINSTALL=true	;;
 		V) usage | tail -n 1; exit 0	;;
 		C) CHECKONLY=true	;;
 		A) ATTENDED=true; EXCLUDEPKGS=	;;
@@ -184,6 +187,7 @@ echo "Done"
 
 # create setup.exe options args
 $SILENT && SETUPARGS+=" -s"
+$CLEANINSTALL && SETUPARGS+=" -clean"
 $ATTENDED && SETUPARGS=
 
 # run the installer with args
