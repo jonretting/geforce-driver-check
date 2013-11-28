@@ -27,10 +27,8 @@ SEVENZIP=
 BINPATH=
 USE7ZPATH=false
 
-# error func
 error() { echo "Error: $1"; exit 1; }
 
-# ask function
 ask() {
 	while true; do
 		if [[ "${2:-}" = "Y" ]]; then prompt="Y/n"; default=Y
