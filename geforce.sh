@@ -1,11 +1,12 @@
 #!/bin/bash
 # git@git.lowjax.com:user/geforce-driver-check.git
 # Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
-VERSION="1.011"
+VERSION="1.020"
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
 DLHOST="http://us.download.nvidia.com" #use this mirror
+ROOTPATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
 
 # default vars
 LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
@@ -21,8 +22,7 @@ REMOEMS=
 OLDOEMINF=
 CURRENTVER=
 DLURI=
-SEVENZIP=
-BINPATH=
+SZIP=
 EXTRACTSUBDIR=
 LATESTVERNAME= #adds decimal
 CURRENTVERNAME= #adds decimal
@@ -32,9 +32,10 @@ SILENT=false
 YES=false
 USE7ZPATH=false
 CHECKONLY=false
+ATTENDED=false
 
 # binary dependency array
-DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'tail' 'sed' 'wc' 'find' '7z' 'cygpath' 'ln' 'which')
+DEPS=('PnPutil' 'wget' '7z' 'cygpath')
 
 error() { echo "Error: $1"; exit 1; }
 
@@ -44,7 +45,7 @@ ask() {
 		elif [[ "${2:-}" = "N" ]]; then prompt="y/N"; default=N
 		else prompt="y/n"; default=;
 		fi
-		if $YES; then REPLY=Y; default=Y #need debug
+		if $YES; then REPLY=Y; default=Y
 		else echo -ne "$1 "; read -p "[$prompt] " REPLY; [[ -z "$REPLY" ]] && REPLY=$default
 		fi
 		case "$REPLY" in
@@ -57,28 +58,23 @@ checkdir() {
 	[[ -d "$1" ]] && return 0 || return 1
 }
 
-#needs cleanup/optimization/abstraction
 find7z() {
-	if [[ -d "${ROOTPATH}/Program Files" ]]; then
-		cd "${ROOTPATH}/Program Files"
-		local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
-		[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVENZIP="${PWD}/${find}/7z.exe"
-		cd "$CWD"
-	fi
-	if [[ -z $SEVENZIP ]] && [[ -d "${ROOTPATH}/Program Files (x86)" ]]; then
-		cd "${ROOTPATH}/Program Files (x86)"
-		local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
-		[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVENZIP="${PWD}/${find}/7z.exe"
-		cd "$CWD"
-	fi
-	[[ -z $SEVENZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
+	local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
+	[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SZIP="${PWD}/${find}/7z.exe"
+	cd "$CWD"
+}
+
+#needs cleanup/optimization/abstraction
+7zip() {
+	checkdir "${ROOTPATH}/Program Files" &&	cd "${ROOTPATH}/Program Files" && find7z
+	[[ -z $SZIP ]] && checkdir "${ROOTPATH}/Program Files (x86)" &&	cd "${ROOTPATH}/Program Files (x86)" &&	find7z
+	[[ -z $SZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
 	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
 		local BINPATH=$(which ln | sed -e "s/\/ln//")
-		[[ -d "$BINPATH" ]] && ln -s "$SEVENZIP" "$BINPATH"
+		checkdir "$BINPATH" && ln -s "$SZIP" "$BINPATH"
 	else
 		USE7ZPATH=true
 	fi
-	return 0
 }
 
 usage() {
@@ -86,22 +82,26 @@ usage() {
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
 Usage: geforce.sh [-s] [-y]
 Example: geforce.sh
+-a    Attended install (user must traverse Nvidia setup GUI)
 -s    Silent install (dont show Nvidia progress bar)
 -y    Answer 'yes' to all prompts
 -d    Specify download location
 -C    Only check for new version (returns version#, 0=update available, 1=no update)
+-A    Enable all Nvidia Driver packages (GFExperience, NV3DVision, etc), autoenables Attended install (-a)
 -V    Displays version info
 -h    this crupt
 Version: ${VERSION}"
 }
 
-while getopts syhVCd: OPTIONS; do
+while getopts asyhVCAd: OPTIONS; do
 	case "${OPTIONS}" in
-		s) SILENT=true	;;
-		y) YES=true	;;
+		a) ATTENDED=true	;;
+		s) SILENT=true		;;
+		y) YES=true			;;
 		d) DOWNLOADDIR="$OPTARG"	;;
 		V) usage | tail -n 1; exit 0	;;
 		C) CHECKONLY=true	;;
+		A) ATTENDED=true; EXCLUDEPKGS=	;;
 		h) usage; exit 0	;;
 		*) usage; exit 1	;;
 	esac
@@ -110,9 +110,9 @@ shift $(($OPTIND -1))
 
 # check binary dependencies
 for i in "${DEPS[@]}"; do
-	#7zip check and create symlink
+	#7zip check|find and create symlink
 	if [[ $i == '7z' ]]; then
-		hash $i 2>/dev/null || find7z
+		hash $i 2>/dev/null || 7zip
 	else
 		hash $i 2>/dev/null || error "Dependency not found :: $i"
 	fi
@@ -130,9 +130,6 @@ if [[ $(echo "$REMOEMS" | wc -l) -gt 1 ]]; then
 	done
 fi
 
-# defaults that use deps
-ROOTPATH=$(cygpath -W | sed -e "s/\/Windows//")
-
 # file data query
 FILEDATA=$(wget -qO- "$(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1)" | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
 [[ $FILEDATA == *.exe ]] || error "Unexpected FILEDATA returned :: $FILEDATA"
@@ -140,7 +137,6 @@ FILEDATA=$(wget -qO- "$(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}
 # get file name only
 FILENAME=$(echo "$FILEDATA" | cut -d '/' -f4)
 [[ $FILENAME == *.exe ]] || error "Unexpected FILENAME returned :: $FILENAME"
-
 
 # get latest version
 LATESTVER=$(echo "$FILEDATA" | cut -d '/' -f3 | sed -e "s/\.//")
@@ -159,7 +155,6 @@ CURRENTVERNAME=$(echo $CURRENTVER | sed 's/./.&/4')
 # store full uri
 DLURI="${DLHOST}${FILEDATA}"
 
-
 # check versions
 if [[ $CURRENTVER -eq $LATESTVER ]]; then
 	$CHECKONLY && exit 1
@@ -172,7 +167,7 @@ $CHECKONLY && { echo "$CURRENTVERNAME --> $LATESTVERNAME"; exit 0; }
 echo -e "New version available!
 Current: $CURRENTVERNAME
 Latest:  $LATESTVERNAME
-Downloading latest version into \"$DOWNLOADDIR\"...."
+Downloading latest version into \"$DOWNLOADDIR\"..."
 cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 wget -N "$DLURI" || error "wget downloading file \"$DLURI\""
 
@@ -180,19 +175,20 @@ wget -N "$DLURI" || error "wget downloading file \"$DLURI\""
 ask "Extract and Install new version ($LATESTVERNAME) now?" || { echo "User cancelled"; exit 0; }
 
 # unarchive new version download
-[[ -d "${ROOTPATH}/NVIDIA" ]] || mkdir "${ROOTPATH}/NVIDIA" || error "creating directory :: \"$ROOTPATH/NVIDIA\""
+checkdir "${ROOTPATH}/NVIDIA" || mkdir "${ROOTPATH}/NVIDIA" || error "creating directory :: \"$ROOTPATH/NVIDIA\""
 EXTRACTSUBDIR="${ROOTPATH}/NVIDIA/GDC-${LATESTVERNAME}"
 echo -ne "Extracting new driver archive..."
-[[ -d "$EXTRACTSUBDIR" ]] && rm -rf "$EXTRACTSUBDIR"
+checkdir "$EXTRACTSUBDIR" && rm -rf "$EXTRACTSUBDIR"
 7z x "$(cygpath -wap "${DOWNLOADDIR}/${FILENAME}")" -o"$(cygpath -wap "${EXTRACTSUBDIR}")" $EXCLUDEPKGS >/dev/null || error "extracting new download"
 echo "Done"
 
 # create setup.exe options args
 $SILENT && SETUPARGS+=" -s"
+$ATTENDED && SETUPARGS=
 
 # run the installer with args
 echo -ne "Executing installer setup..."
-cygstart -w "$EXTRACTSUBDIR/setup.exe" $SETUPARGS || error "Installation failed or user interupted!"
+cygstart -w "$EXTRACTSUBDIR/setup.exe" "$SETUPARGS" || error "Installation failed or user interupted!"
 echo "Done"
 
 # remove old oem inf package
