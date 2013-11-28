@@ -80,19 +80,23 @@ CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVI
 # store full uri
 DLURI="${DLHOST}${FILEDATA}"
 
-if [[ $LATESTVER -gt $CURRENTVER ]]; then
-	echo "New version available!"
-	echo "Current: $CURRENTVER"
-	echo -e "Latest:  $LATESTVER"
-	echo "Downloading latest version into \"$DOWNLOADDIR\"...."
-	cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
-	wget -N "$DLURI" || error "Downloading file \"$DLURI\""
-	ask "Install new version ($LATESTVER) now?" && 
-	cygstart -w "$FILENAME" || error "Installation failed or user interupted!"
-	echo "Removing old driver package..."
-	PnPutil -d $OLDOEMINF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLDOEMINF"
-	exit 0
-else
-	echo "Already latest version: $CURRENTVER"
-	exit 0
-fi
+#check versions
+[[ $LATESTVER -eq $CURRENTVER ]] && { echo "Already latest version: $CURRENTVER"; exit 0; }
+
+#run tasks
+echo -e "New version available!
+Current: $CURRENTVER
+Latest:  $LATESTVER
+Downloading latest version into \"$DOWNLOADDIR\"...."
+
+#download and run
+cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
+wget -N "$DLURI" || error "Downloading file \"$DLURI\""
+ask "Install new version ($LATESTVER) now?" && 
+cygstart -w "$FILENAME" || error "Installation failed or user interupted!"
+
+#remove old oem inf driver package
+echo "Removing old driver package..."
+PnPutil -d $OLDOEMINF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLDOEMINF"
+
+exit 0
