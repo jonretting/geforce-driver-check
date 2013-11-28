@@ -1,3 +1,4 @@
+exit 0
 #!/usr/bin/env bash
 # Checks for newer Nvidia Display Driver then installs silently or with many more options
 
