@@ -7,13 +7,14 @@ DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
 DLHOST="http://us.download.nvidia.com" #use this mirror
 
 # binary dependency array
-DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed')
+DEPS=('PnPutil' 'wget' 'awk' 'cut' 'head' 'sed' 'wc')
 
 # clear vars *no edit
 LINK=
 FILEDATA=
 FILENAME=
 LATESTVER=
+OLDOEMINF=
 CURRENTVER=
 DLURI=
 
@@ -27,7 +28,7 @@ ask() {
 		elif [[ "${2:-}" = "N" ]]; then prompt="y/N"; default=N
 		else prompt="y/n"; default=;
 		fi
-		if [[ "$1" = "-y" ]]; then REPLY=Y; default=Y
+		if [[ "$1" = "-y" ]]; then REPLY=Y; default=Y #need debug
 		else echo -ne "$1 "; read -p "[$prompt] " REPLY; [[ -z "$REPLY" ]] && REPLY=$default
 		fi
 		case "$REPLY" in
@@ -43,6 +44,15 @@ done
 
 # check if DOWNLOADDIR exists
 [[ -d "$DOWNLOADDIR" ]] || error "Directory not found \"$DOWNLOADDIR\""
+
+# remove unused oem*.inf packages and set OLDOEMINF from in use
+REMOEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
+if [[ $(echo "$REMOEMS" | wc -l) -gt 1 ]]; then
+	for REOEM in $REMOEMS; do
+		[[ $REOEM == oem*.inf ]] || error "removing in unused oem*.inf file :: $REOEM"
+		PnPutil -d $REOEM >/dev/null || OLDOEMINF="$REOEM"
+	done
+fi
 
 # default nvidia starting link
 LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
@@ -63,8 +73,8 @@ LATESTVER=$(echo "$FILEDATA" | cut -d '/' -f3 | sed -e "s/\.//")
 CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
 [[ $CURRENTVER =~ ^[0-9]+$ ]] || error "CURRENTVER not a number or multistring :: $CURRENTVER"
 
-# old oem*.inf file
-OLDOEMINF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENTVER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
+# old oem*.inf file if not already detected
+[[ -z $OLDOEMINF ]] && OLDOEMINF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENTVER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
 [[ $OLDOEMINF == oem*.inf ]] || error "Old oem*.inf file :: $OLDOEMINF"
 
 # store full uri
