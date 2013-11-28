@@ -6,6 +6,7 @@ By: Jon Retting
 
 INFO:
 -----
+- Requires CYGWIN
 - Currently supports only Windows 7 x64 and Windows 8 x64
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
