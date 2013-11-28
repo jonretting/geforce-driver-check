@@ -150,7 +150,7 @@ if [[ $(echo "$REMOEMS" | wc -l) -gt 1 ]]; then
 fi
 
 # file data query
-FILEDATA=$(wget -qO- "$(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1)" | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
+FILEDATA=$(wget -qO- $(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
 [[ $FILEDATA == *.exe ]] || error "Unexpected FILEDATA returned :: $FILEDATA"
 
 # get file name only
