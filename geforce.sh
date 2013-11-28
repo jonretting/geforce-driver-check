@@ -157,7 +157,7 @@ CURRENTVERNAME=$(echo $CURRENTVER | sed 's/./.&/4')
 DLURI="${DLHOST}${FILEDATA}"
 
 # check versions
-if [[ $LATESTVER -lt $CURRENTVER ]]; then
+if [[ $CURRENTVER -eq $LATESTVER ]]; then
 	$CHECKONLY && exit 1
 	echo "Already latest version: $CURRENTVERNAME"
 	exit 0
@@ -173,7 +173,7 @@ cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 wget -N "$DLURI" || error "Downloading file \"$DLURI\""
 
 # ask to isntall
-ask "Extract and Install new version ($LATESTVER) now?" || { echo "User cancelled"; exit 0; }
+ask "Extract and Install new version ($LATESTVERNAME) now?" || { echo "User cancelled"; exit 0; }
 
 # unarchive new version download
 [[ -d "${ROOTPATH}/NVIDIA" ]] || mkdir "${ROOTPATH}/MVIDIA" || error "creating directory :: \"$ROOTPATH/MVIDIA\""
@@ -196,5 +196,8 @@ echo -ne "Removing old driver package..."
 PnPutil -d $OLDOEMINF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLDOEMINF"
 echo "Done"
 
+# put final checks here verify new version
+CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
+[[ $CURRENTVER -eq $LATESTVER ]] || error "After all that your driver version didn't change!"
 echo "Driver installation successfull!"
 exit 0
