@@ -11,21 +11,6 @@ CONFIGURE:
 - Specify download folder by changing $DOWNLOADDIR="/directory"
 
 RUNNING:
-- First time run will fail! if multiple driver packages are detected. Fix by manually removing old oem*.inf driver packages
-  Howto:
-  	- Find out your current installed active driver version. "System Info" in Nvidia Control Panel
-  	- Use the following command to list all driver packages currently installed:
-  	    PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA"
-  	- Make note of all "Published names: oem*.inf" refferences which is not your current version. ex:
-        Published name :            oem8.inf
-        Driver package provider :   NVIDIA
-        Class :                     Display adapters
-        Driver date and version :   11/23/2013 9.18.13.3193
-        Signer name :
-      "3.3193" is version "33.193"
-    - Remove old packages by running the following command for each orm*.inf occurance
-        PnPutil.exe -d oem*.inf
-        It won't allow you to remove inuse inf packages
 - execute by bashing geforce.sh
   examples: 
     ./geforce.sh
@@ -36,6 +21,7 @@ RUNNING:
     bash /dir/geforce-driver-update/geforce.sh
 
 TODO: 
+- add getopts
 - add notification switch when update is available
 - make crontab friendly
 - allow for other types ex: x86 version, only whql
