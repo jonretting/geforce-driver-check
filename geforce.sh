@@ -1,6 +1,5 @@
-#!/bin/bash
-# git@git.lowjax.com:user/geforce-driver-check.git
-# Script for checking for newer Nvidia Display Driver than the one install (x64 win7-win8)
+#!/usr/bin/env bash
+# Checks for newer Nvidia Display Driver then installs silently or with many more options
 VERSION="1.022"
 
 # cutomizable defaults
