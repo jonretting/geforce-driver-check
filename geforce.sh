@@ -64,8 +64,9 @@ CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVI
 [[ $CURRENTVER =~ ^[0-9]+$ ]] || error "CURRENTVER not a number or multistring :: $CURRENTVER"
 
 # old oem*.inf file
-OLDOEMINF=$( PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENTVER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
+OLDOEMINF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENTVER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
 [[ $OLDOEMINF == oem*.inf ]] || error "Old oem*.inf file :: $OLDOEMINF"
+
 
 # store full uri
 DLURI="${DLHOST}${FILEDATA}"
@@ -77,9 +78,9 @@ if [[ $LATESTVER -gt $CURRENTVER ]]; then
 	echo "Downloading latest version into \"$DOWNLOADDIR\"...."
 	cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 	wget -N "$DLURI" || error "Downloading file \"$DLURI\""
-	ask "Install new version ($LATESTVER) now?" && cygstart "$FILENAME"
-	PnPutil -d $OLDOEMINF #remove old oem*.inf package
-	exit 0
+	ask "Install new version ($LATESTVER) now?" && 
+	cygstart -w "$FILENAME" &&
+	PnPutil -d $OLDOEMINF && exit 0 || exit 1
 else
 	echo "Already latest version: $CURRENTVER"
 	exit 0
