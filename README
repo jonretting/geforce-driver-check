@@ -7,6 +7,8 @@ INFO:
 - Downloads latest version if current version is older
 - Prompts to launch downloaded new version executable
 
+WARNING: This is not for custom video adapter drivers like some mobile Nvidia devices!
+
 CONFIGURE:
 - Specify download folder by changing $DOWNLOADDIR="/directory"
 
