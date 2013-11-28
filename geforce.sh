@@ -10,7 +10,7 @@ DLHOST="http://us.download.nvidia.com" #use this mirror
 # default vars
 LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
 EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay"
-SETUPARGS="-nosplash -noeula -n"
+SETUPARGS="-nosplash -noeula -n" #-n noreboot
 ROOTPATH="/cygdrive/c"	#$(cygpath -W | sed -e "s/\/Windows//")
 CWD=$PWD
 
