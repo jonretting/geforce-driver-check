@@ -10,7 +10,6 @@ INFO:
 - Currently supports only Windows 7 x64 and Windows 8 x64
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
-- Prompts to launch downloaded new version executable
 - Only installs Display Driver, HD Audio, and PshyX
 - Prompts to install after downloading (no prompt, no progress when "-s" is envoked
 - Will install automatically, no interaction needed
