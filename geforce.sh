@@ -26,6 +26,8 @@ CWD=$PWD
 SEVENZIP=
 BINPATH=
 USE7ZPATH=false
+ROOTPATH=$(cygpath -W | cut -d '/' -f1-3) #usually /cygdrive/c
+EXTRACTSUBDIR=
 
 error() { echo "Error: $1"; exit 1; }
 
@@ -46,15 +48,14 @@ ask() {
 
 #needs cleanup/optimization/abstraction
 find7z() {
-	local path=$(cygpath -W | cut -d '/' -f1-3)
-	if [[ -d "${path}/Program Files" ]]; then
-		cd "${path}/Program Files"
+	if [[ -d "${ROOTPATH}/Program Files" ]]; then
+		cd "${ROOTPATH}/Program Files"
 		local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
 		[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVENZIP="${PWD}/${find}/7z.exe"
 		cd "$CWD"
 	fi
-	if [[ -z $SEVENZIP ]] && [[ -d "${path}/Program Files (x86)" ]]; then
-		cd "${path}/Program Files (x86)"
+	if [[ -z $SEVENZIP ]] && [[ -d "${ROOTPATH}/Program Files (x86)" ]]; then
+		cd "${ROOTPATH}/Program Files (x86)"
 		local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
 		[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVENZIP="${PWD}/${find}/7z.exe"
 		cd "$CWD"
@@ -141,7 +142,7 @@ CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVI
 DLURI="${DLHOST}${FILEDATA}"
 
 #check versions
-[[ $LATESTVER -le $CURRENTVER ]] && { echo "Already latest version: $(echo $CURRENTVER| sed 's/./.&/4')"; exit 0; }
+#[[ $LATESTVER -lt $CURRENTVER ]] && { echo "Already latest version: $(echo $CURRENTVER| sed 's/./.&/4')"; exit 0; }
 
 #run tasks
 echo -e "New version available!
@@ -150,6 +151,19 @@ Latest:  $(echo $LATESTVER | sed 's/./.&/4')
 Downloading latest version into \"$DOWNLOADDIR\"...."
 cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
 wget -N "$DLURI" || error "Downloading file \"$DLURI\""
+
+#unarchive new version download
+[[ -d "${ROOTPATH}/NVIDIA" ]] || mkdir "${ROOTPATH}/MVIDIA" || error "creating directory :: \"$ROOTPATH/MVIDIA\""
+EXTRACTSUBDIR="${ROOTPATH}/NVIDIA/GDC-$(echo $LATESTVER | sed 's/./.&/4')"
+echo -ne "Extracting new driver archive..."
+7z x "$(cygpath -wap "${DOWNLOADDIR}/${FILENAME}")" -o"$(cygpath -wap "${EXTRACTSUBDIR}")" >/dev/null
+echo $?
+echo "Done"
+
+
+exit 0
+
+
 ask "Install new version ($LATESTVER) now?" &&
 cygstart -w "$FILENAME" || error "Installation failed or user interupted!"
 echo -ne "Removing old driver package..."
