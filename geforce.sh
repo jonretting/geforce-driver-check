@@ -28,7 +28,6 @@ ROOTPATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
 LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us"
 DESKTOP_ID="&psid=95"
 NOTEBOOK_ID="&psid=92"
-
 EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 SETUPARGS="-nofinish -passive -nosplash -noeula -n" #-n noreboot
 CWD=$PWD
