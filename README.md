@@ -1,7 +1,7 @@
 geforce-driver-check
 ====================
 
-### Checks for new Nvidia Display Driver then does an unattended install, or with many more options 
+### Checks for new Nvidia Display Drivers then does an unattended install, or with many more options 
 By: Jon Retting
 
 INFO:
@@ -19,7 +19,7 @@ INFO:
 - Removes old driver inf packages ex: oem7.inf
 - Script will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
 - You can check and see if a new version is available with "-C" won't download new driver, won't install
-- Extracts new display driver by default to /cygdrive/c/GDC-"driver ver"
+- Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver"
 
 WARNING: 
 --------
@@ -59,4 +59,3 @@ TODO:
 - verify system os and architecture
 - support international driver version option
 - specify root path as option
-
