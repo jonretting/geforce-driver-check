@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.022"
+VERSION="1.025"
 
 # cutomizable defaults
 DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
@@ -25,7 +25,10 @@ DLHOST="http://us.download.nvidia.com" #use this mirror
 ROOTPATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
 
 # default vars
-LINK="http://www.nvidia.com/Download/processFind.aspx?psid=95&pfid=695&osid=19&lid=1&whql=&lang=en-us"
+LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us"
+DESKTOP_ID="&psid=95"
+NOTEBOOK_ID="&psid=92"
+
 EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 SETUPARGS="-nofinish -passive -nosplash -noeula -n" #-n noreboot
 CWD=$PWD
@@ -50,9 +53,10 @@ USE7ZPATH=false
 CHECKONLY=false
 ATTENDED=false
 CLEANINSTALL=false
+NOTEBOOK=false
 
 # binary dependency array
-DEPS=('PnPutil' 'wget' '7z' 'cygpath')
+DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
 
 error() { echo "Error: $1"; exit 1; }
 
@@ -73,6 +77,10 @@ ask() {
 
 checkdir() {
 	[[ -d "$1" ]] && return 0 || return 1
+}
+
+checkfile() {
+	[[ -e "$1" ]] && return 0 || return 1
 }
 
 find7z() {
@@ -140,6 +148,11 @@ done
 # check default download directory
 checkdir "$DOWNLOADDIR" || error "Directory not found \"$DOWNLOADDIR\""
 
+# check if video adapter notebook model
+VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
+checkfile "${CWD}/devices_notebook.txt" || error "checking devices_notebook.txt"
+[[ -n "$VID_DESC" ]] && cat "${CWD}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
+
 # remove unused oem*.inf packages and set OLDOEMINF from in use
 REMOEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
 if [[ $(echo "$REMOEMS" | wc -l) -gt 1 ]]; then
@@ -150,6 +163,7 @@ if [[ $(echo "$REMOEMS" | wc -l) -gt 1 ]]; then
 fi
 
 # file data query
+$NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
 FILEDATA=$(wget -qO- $(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
 [[ $FILEDATA == *.exe ]] || error "Unexpected FILEDATA returned :: $FILEDATA"
 
