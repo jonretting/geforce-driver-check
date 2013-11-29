@@ -25,7 +25,7 @@ INFO:
 
 WARNING: 
 --------
-This is not for custom video adapter drivers like some mobile Nvidia devices!
+This is not for custom (Notebook) video adapter drivers like some mobile Nvidia devices! Install will fail before anything happens. No harm no foul. Notebook driver support is a future feature.
 
 DEPENDENCIES:
 -------------
@@ -55,6 +55,7 @@ OPTIONS:
 
 TODO:
 -----
+- support notebook adapters
 - add notification email switch when update is available
 - make crontab friendly
 - allow for other types ex: x86 version, only whql
