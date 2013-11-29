@@ -146,7 +146,7 @@ done
 # check default download directory
 checkdir "$DOWNLOADDIR" || error "Directory not found \"$DOWNLOADDIR\""
 
-# check if video adapter notebook model
+# check for notebook adapater
 VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
 checkfile "${CWD}/devices_notebook.txt" || error "checking devices_notebook.txt"
 [[ -n "$VID_DESC" ]] && cat "${CWD}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
