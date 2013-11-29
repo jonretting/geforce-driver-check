@@ -10,6 +10,7 @@ INFO:
 -----
 - Requires CYGWIN
 - Currently supports only Windows 7 x64 and Windows 8 x64
+- Works with Desktop and Notebook Graphics adapaters
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
 - Only installs Display Driver, HD Audio, and PshyX
@@ -23,13 +24,9 @@ INFO:
 - You can check and see if a new version is available with "-C" won't download new driver, won't install
 - Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver"
 
-WARNING: 
---------
-This is not for custom (Notebook) video adapter drivers like some mobile Nvidia devices! Install will fail before anything happens. No harm no foul. Notebook driver support is a future feature.
-
 DEPENDENCIES:
 -------------
-PnPutil (part of windows), wget, 7-Zip, cygpath
+wget, 7-Zip, cygpath, wmic (part of windows), PnPutil (part of windows)
 
 CONFIGURE:
 ----------
@@ -52,13 +49,11 @@ OPTIONS:
 
 	See INFO for more information
 
-
 TODO:
 -----
-- support notebook adapters
 - add notification email switch when update is available
 - make crontab friendly
 - allow for other types ex: x86 version, only whql
-- verify system os and architecture
-- support international driver version option
+- verify supported system os and architecture first
+- support international driver versions
 - specify root path as option
