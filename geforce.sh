@@ -88,7 +88,6 @@ find7z() {
 	cd "$CWD"
 }
 
-#needs cleanup/optimization/abstraction
 7zip() {
 	checkdir "${ROOTPATH}/Program Files" &&	cd "${ROOTPATH}/Program Files" && find7z
 	[[ -z $SZIP ]] && checkdir "${ROOTPATH}/Program Files (x86)" &&	cd "${ROOTPATH}/Program Files (x86)" &&	find7z
