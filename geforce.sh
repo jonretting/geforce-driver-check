@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.029"
+VERSION="1.030"
 
 # cutomizable defaults
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
@@ -61,6 +61,7 @@ ATTENDED=false
 CLEAN_INSTALL=false
 NOTEBOOK=false
 ENABLE_REBOOT_PROMPT=false
+INTERNATIONAL=false
 
 # binary dependency array
 DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
@@ -122,13 +123,14 @@ Example: geforce.sh
 -d    Specify download location
 -C    Only check for new version (returns version#, 0=update available, 1=no update)
 -A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
+-i    Download international driver package (driver package for non English installs)
 -r    Don't disable reboot prompt when reboot is needed (could be buged)
 -V    Displays version info
 -h    this crupt
 Version: ${VERSION}"
 }
 
-while getopts asyhVcCAdr: OPTIONS; do
+while getopts asyd:cVCAirh OPTIONS; do
 	case "${OPTIONS}" in
 		a) ATTENDED=true	;;
 		s) SILENT=true		;;
@@ -138,6 +140,7 @@ while getopts asyhVcCAdr: OPTIONS; do
 		V) usage | tail -n 1; exit 0	;;
 		C) CHECK_ONLY=true	;;
 		A) ATTENDED=true; EXCLUDE_PKGS=	;;
+		i) INTERNATIONAL=true	;;
 		r) ENABLE_REBOOT_PROMPT=true	;;
 		h) usage; exit 0	;;
 		*) usage; exit 1	;;
@@ -184,7 +187,7 @@ checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook
 
 # remove unused oem*.inf packages and set CURRENT_OEM_INF from in use
 REM_OEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
-if [[ $(echo "$REM_OEMS" | wc -l) -gt 1 ]]; then
+if [[ $(echo "$REM_OEMS" | wc -l) -gt 0 ]] && ! $CHECK_ONLY; then
 	for REOEM in $REM_OEMS; do
 		[[ $REOEM == oem*.inf ]] || error "Unexpected value in REOEMS array :: $REOEM"
 		PnPutil -d $REOEM >/dev/null || CURRENT_OEM_INF="$REOEM"
@@ -216,6 +219,7 @@ CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
 
 # store full uri
 DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
+$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
 
 # check versions
 if [[ $CURRENT_VER -eq $LATEST_VER ]]; then
