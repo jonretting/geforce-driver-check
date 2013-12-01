@@ -13,6 +13,7 @@ INFO:
 - Works with Desktop and Notebook Graphics adapaters
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
+- Supports the international driver package version when "-i" is envoked
 - Only installs Display Driver, HD Audio, and PshyX
 - Prompts to install after downloading (no prompt, no progress when "-s" is envoked
 - Will install automatically, no interaction needed
