@@ -39,26 +39,26 @@ CONFIGURE:
 EXAMPLES:
 --------
 • Run default
+
 	./geforce.sh
-
 • Run with International (driver package for non English installs)
+
 	./geforce.sh -i
-
 • Run with all packages enabled (GFexperience, Geforce Vission, etc) fully attended install
+
 	./geforce.sh -A
-
 • Run with fully attended install enabled, will requires user to progress through Nvidia setup GUI
+
 	./geforce.sh -a
-
 • Run completely silent answers "yes" to all prompts, doesn't display any Nvidia GUI (no driver install progress window)
+
 	./geforce.sh -s
-
 • Run without downloading new version or removing any unused display oem*.inf packages
+
 	./geforce.sh -C
-
 • Run with Download path specified, yes to all prompts, and silent driver install (no Nvidia GUI)
-	./geforce.sh -d "/home/me/Downloads" -s -y
 
+	./geforce.sh -d "/home/me/Downloads" -s -y
 
 OPTIONS:
 --------
