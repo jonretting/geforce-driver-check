@@ -17,11 +17,11 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.026"
+VERSION="1.027"
 
 # cutomizable defaults
-DOWNLOAD_DIR="/cygdrive/e/Downloads" #download driver file into this directory
-DL_HOST="http://us.download.nvidia.com" #use this download mirror
+DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
+DOWNLOAD_MIRROR="http://us.download.nvidia.com" #use this download mirror
 ROOT_PATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
 
 # default vars
@@ -37,21 +37,22 @@ FILE_DATA=
 FILE_NAME=
 LATEST_VER=
 REM_OEMS=
-OLD_OEM_INF=
+CURRENT_OEM_INF=
 CURRENT_VER=
-DLURI=
+DOWNLOAD_URI=
 SEVEN_ZIP=
-EXTRACT_SUB_DIR=
+EXTRACT_SUB_PATH=
 LATEST_VER_NAME= #adds decimal
 CURRENT_VER_NAME= #adds decimal
 GDC_PATH=
 CYG_USER=
 WIN_USER=
-DEFAULT_DOWN_DIR=
+FALLBACK_DOWNLOAD_PATH=
+DOWNLOAD_URI=
 
 # default flags
 SILENT=false
-YES=false
+YES_TO_ALL_TO_ALL=false
 USE_7Z_PATH=false
 CHECK_ONLY=false
 ATTENDED=false
@@ -69,7 +70,7 @@ ask() {
 		elif [[ "${2:-}" = "N" ]]; then prompt="y/N"; default=N
 		else prompt="y/n"; default=;
 		fi
-		if $YES; then REPLY=Y; default=Y
+		if $YES_TO_ALL; then REPLY=Y; default=Y
 		else echo -ne "$1 "; read -p "[$prompt] " REPLY; [[ -z "$REPLY" ]] && REPLY=$default
 		fi
 		case "$REPLY" in
@@ -127,8 +128,8 @@ while getopts asyhVcCAd: OPTIONS; do
 	case "${OPTIONS}" in
 		a) ATTENDED=true	;;
 		s) SILENT=true		;;
-		y) YES=true			;;
-		d) DOWNLOAD_DIR="$OPTARG"	;;
+		y) YES_TO_ALL=true			;;
+		d) DOWNLOAD_PATH="$OPTARG"	;;
 		c) CLEAN_INSTALL=true	;;
 		V) usage | tail -n 1; exit 0	;;
 		C) CHECK_ONLY=true	;;
@@ -155,27 +156,27 @@ CYG_USER=$(echo "${HOME}" | cut -d '/' -f3)
 WIN_USER=$(wmic computersystem get username | sed -n 2p | awk '{print $1}' | cut -d '\' -f2)
 [[ -n "$WIN_USER" ]] || error "retrieving Windows session username"
 
-# check set default download directory
-DEFAULT_DOWN_DIR="${ROOT_PATH}/Users/${WIN_USER}/Downloads"
-checkdir "$DOWNLOAD_DIR" || DOWNLOAD_DIR="$DEFAULT_DOWN_DIR"
-checkdir "$DOWNLOAD_DIR" || error "Directory not found $DOWNLOAD_DIR try '-d' or specify $DOWNLOAD_DIR manually"
+# check set default download path
+FALLBACK_DOWNLOAD_PATH="${ROOT_PATH}/Users/${WIN_USER}/Downloads"
+checkdir "$DOWNLOAD_PATH" || DOWNLOAD_PATH="$FALLBACK_DOWNLOAD_PATH"
+checkdir "$DOWNLOAD_PATH" || error "Path not found $DOWNLOAD_PATH"
 
 # get/check geforce-driver-check bash source
 checkfile "${BASH_SOURCE}" || error "establishing script source path"
 GDC_PATH=$(dirname ${BASH_SOURCE})
-checkdir "$GDC_PATH" || error "establishing script source directory"
+checkdir "$GDC_PATH" || error "establishing script source path"
 
 # check for notebook adapater
 VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
 checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
 [[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 
-# remove unused oem*.inf packages and set OLD_OEM_INF from in use
+# remove unused oem*.inf packages and set CURRENT_OEM_INF from in use
 REM_OEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
 if [[ $(echo "$REM_OEMS" | wc -l) -gt 1 ]]; then
 	for REOEM in $REM_OEMS; do
 		[[ $REOEM == oem*.inf ]] || error "Unexpected value in REOEMS array :: $REOEM"
-		PnPutil -d $REOEM >/dev/null || OLD_OEM_INF="$REOEM"
+		PnPutil -d $REOEM >/dev/null || CURRENT_OEM_INF="$REOEM"
 	done
 fi
 
@@ -197,13 +198,14 @@ LATEST_VER_NAME=$(echo $LATEST_VER| sed 's/./.&/4')
 CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
 [[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
 CURRENT_VER_NAME=$(echo $CURRENT_VER | sed 's/./.&/4')
-
+echo $CURRENT_VER
+echo $CURRENT_VER_NAME
 # old oem*.inf file if not already detected
-[[ -z $OLD_OEM_INF ]] && OLD_OEM_INF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENT_VER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
-[[ $OLD_OEM_INF == oem*.inf ]] || error "Old oem*.inf file :: $OLD_OEM_INF"
+[[ -z $CURRENT_OEM_INF ]] && CURRENT_OEM_INF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENT_VER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
+[[ $CURRENT_OEM_INF == oem*.inf ]] || error "Old oem*.inf file :: $CURRENT_OEM_INF"
 
 # store full uri
-DLURI="${DL_HOST}${FILE_DATA}"
+DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 
 # check versions
 if [[ $CURRENT_VER -eq $LATEST_VER ]]; then
@@ -217,19 +219,19 @@ $CHECK_ONLY && { echo "$CURRENT_VER_NAME --> $LATEST_VER_NAME"; exit 0; }
 echo -e "New version available!
 Current: $CURRENT_VER_NAME
 Latest:  $LATEST_VER_NAME
-Downloading latest version into \"$DOWNLOAD_DIR\"..."
-cd "$DOWNLOAD_DIR" || error "Changing to download directory \"$DOWNLOAD_DIR\""
-wget -N "$DLURI" || error "wget downloading file \"$DLURI\""
+Downloading latest version into \"$DOWNLOAD_PATH\"..."
+cd "$DOWNLOAD_PATH" || error "cd to download path :: $DOWNLOAD_PATH"
+wget -N "$DOWNLOAD_URI" || error "wget downloading file :: $DOWNLOAD_URI"
 
 # ask to isntall
 ask "Extract and Install new version ($LATEST_VER_NAME) now?" || { echo "User cancelled"; exit 0; }
 
 # unarchive new version download
-checkdir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating directory :: \"$ROOT_PATH/NVIDIA\""
-EXTRACT_SUB_DIR="${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
+checkdir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
+EXTRACT_SUB_PATH="${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
 echo -ne "Extracting new driver archive..."
-checkdir "$EXTRACT_SUB_DIR" && rm -rf "$EXTRACT_SUB_DIR"
-7z x "$(cygpath -wap "${DOWNLOAD_DIR}/${FILE_NAME}")" -o"$(cygpath -wap "${EXTRACT_SUB_DIR}")" $EXCLUDE_PKGS >/dev/null || error "extracting new download"
+checkdir "$EXTRACT_SUB_PATH" && rm -rf "$EXTRACT_SUB_PATH"
+7z x "$(cygpath -wap "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wap "${EXTRACT_SUB_PATH}")" $EXCLUDE_PKGS >/dev/null || error "extracting new download"
 echo "Done"
 
 # create setup.exe options args
@@ -239,12 +241,12 @@ $ATTENDED && SETUP_ARGS=
 
 # run the installer with args
 echo -ne "Executing installer setup..."
-cygstart -w "$EXTRACT_SUB_DIR/setup.exe" "$SETUP_ARGS" || error "Installation failed or user interupted"
+cygstart -w "$EXTRACT_SUB_PATH/setup.exe" "$SETUP_ARGS" || error "Installation failed or user interupted"
 echo "Done"
 
 # remove old oem inf package
 echo -ne "Removing old driver package..."
-PnPutil -d $OLD_OEM_INF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLD_OEM_INF"
+PnPutil -d $CURRENT_OEM_INF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $CURRENT_OEM_INF"
 echo "Done"
 
 # final check verify new version
