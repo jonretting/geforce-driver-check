@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.028"
+VERSION="1.029"
 
 # cutomizable defaults
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
@@ -143,6 +143,10 @@ while getopts asyhVcCAdr: OPTIONS; do
 done
 shift $(($OPTIND - 1))
 
+# check os and architecture
+[[ $(uname -s) == CYGWIN_NT-6* ]] || error "Unsupported OS Version :: $(uname -s)"
+[[ $(uname -m) == x86_64 ]] || error "Unsupported architecture :: $(uname -m)"
+
 # check binary dependencies
 for i in "${DEPS[@]}"; do
 	#7zip check|find and create symlink
@@ -153,18 +157,18 @@ for i in "${DEPS[@]}"; do
 	fi
 done
 
-# get check usernames
+# set usernames
 CYG_USER=$(echo "${HOME}" | cut -d '/' -f3)
 [[ -n "$CYG_USER" ]] || error "retrieving cygwin session username"
 WIN_USER=$(wmic computersystem get username | sed -n 2p | awk '{print $1}' | cut -d '\' -f2)
 [[ -n "$WIN_USER" ]] || error "retrieving Windows session username"
 
-# check set default download path
+# set default download path
 FALLBACK_DOWNLOAD_PATH="${ROOT_PATH}/Users/${WIN_USER}/Downloads"
 checkdir "$DOWNLOAD_PATH" || DOWNLOAD_PATH="$FALLBACK_DOWNLOAD_PATH"
 checkdir "$DOWNLOAD_PATH" || error "Path not found $DOWNLOAD_PATH"
 
-# get/check geforce-driver-check bash source
+# set geforce-driver-check script path
 checkfile "${BASH_SOURCE}" || error "establishing script source path"
 GDC_PATH=$(dirname ${BASH_SOURCE})
 checkdir "$GDC_PATH" || error "establishing script source path"
