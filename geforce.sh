@@ -24,6 +24,7 @@ VERSION="1.030"
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
 DOWNLOAD_MIRROR="http://us.download.nvidia.com" #use this download mirror
 ROOT_PATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
+INTERNATIONAL=false
 
 # default vars
 LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us"
@@ -43,8 +44,8 @@ CURRENT_VER=
 DOWNLOAD_URI=
 SEVEN_ZIP=
 EXTRACT_SUB_PATH=
-LATEST_VER_NAME= #adds decimal
-CURRENT_VER_NAME= #adds decimal
+LATEST_VER_NAME=
+CURRENT_VER_NAME=
 GDC_PATH=
 CYG_USER=
 WIN_USER=
@@ -62,7 +63,6 @@ ATTENDED=false
 CLEAN_INSTALL=false
 NOTEBOOK=false
 ENABLE_REBOOT_PROMPT=false
-INTERNATIONAL=false
 
 # binary dependency array
 DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
@@ -182,9 +182,11 @@ GDC_PATH=$(dirname ${BASH_SOURCE})
 checkdir "$GDC_PATH" || error "establishing script source path"
 
 # check for notebook adapater
-VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
-[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
+if ! $INTERNATIONAL; then
+	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
+	checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
+	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
+fi
 
 # remove unused oem*.inf packages and set CURRENT_OEM_INF from in use
 REM_OEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
