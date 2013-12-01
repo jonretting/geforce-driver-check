@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Checks for newer Nvidia Display Driver then installs silently or with many more options
+# NAME: Geforce Driver Check (GDC) geforce-driver-check
+# DESC: Checks for new Nvidia Display Drivers then does an automatted unattended install, or with many more options.
 
 # Copyright (c) 2013 Jon Retting
 #
