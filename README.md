@@ -36,6 +36,23 @@ CONFIGURE:
 - Specify default DOWNLOAD_PATH="/path" or use the -d option fallback is /cygdrive/c/Users/current-user=name/Downloads as fallback
 - Specify your root os path if different than ROOT_PATH="/cygdrive/c"
 
+OPTIONS:
+--------
+	geforce.sh [-a] [-s] [-y] [-c] [-d] [-C] [-A] [-V] [-h]
+	-a    Attended install (user must traverse Nvidia setup GUI)
+	-s    Silent install (dont show Nvidia progress bar)
+	-y    Answer 'yes' to all prompts
+	-c    Clean install (removes all saved profiles and settings)
+	-d    Specify download location
+	-C    Only check for new version (returns version#, 0=update available, 1=no update)
+	-A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
+	-i    Download international driver package (driver package for non English installs)
+	-r    Don't disable reboot prompt when reboot is needed (could be buged)
+	-V    Displays version info
+	-h    this crupt
+
+	See INFO for more information
+
 EXAMPLES:
 --------
 • Run default
@@ -59,23 +76,6 @@ EXAMPLES:
 • Run with Download path specified, yes to all prompts, and silent driver install (no Nvidia GUI)
 
 	./geforce.sh -d "/home/me/Downloads" -s -y
-
-OPTIONS:
---------
-	geforce.sh [-a] [-s] [-y] [-c] [-d] [-C] [-A] [-V] [-h]
-	-a    Attended install (user must traverse Nvidia setup GUI)
-	-s    Silent install (dont show Nvidia progress bar)
-	-y    Answer 'yes' to all prompts
-	-c    Clean install (removes all saved profiles and settings)
-	-d    Specify download location
-	-C    Only check for new version (returns version#, 0=update available, 1=no update)
-	-A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
-	-i    Download international driver package (driver package for non English installs)
-	-r    Don't disable reboot prompt when reboot is needed (could be buged)
-	-V    Displays version info
-	-h    this crupt
-
-	See INFO for more information
 
 TODO:
 -----
