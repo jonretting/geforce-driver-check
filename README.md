@@ -22,8 +22,10 @@ INFO:
 - Removes old driver inf packages ex: oem7.inf
 - Script will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
 - You can check and see if a new version is available with "-C" won't download new driver, won't install
-- Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver"
+- Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver#"
 - The -r option will enable Nvidia driver installer to prompy user to reboot if needed (untested)
+- Use only linux/cygwin paths, all paths are checked before being used
+- If default DOWNLOAD_PATH="/cygdrive/e/Downloads" is incorrent, fallback is Windows user's Downloads library
 
 DEPENDENCIES:
 -------------
@@ -31,9 +33,7 @@ wget, 7-Zip, cygpath, wmic (part of windows), PnPutil (part of windows)
 
 CONFIGURE:
 ----------
-- Specify default download folder by changing DOWNLOAD_PATH="/path" @cr
-or use the -d option (use only linux/cygwin paths) @cr
-fallback is /cygdrive/c/Users/current-user=name/Downloads as fallback
+- Specify default DOWNLOAD_PATH="/path" or use the -d option fallback is /cygdrive/c/Users/current-user=name/Downloads as fallback
 - Specify your root os path if different than ROOT_PATH="/cygdrive/c"
 
 OPTIONS:
