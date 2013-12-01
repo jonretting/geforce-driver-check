@@ -49,6 +49,8 @@ CYG_USER=
 WIN_USER=
 FALLBACK_DOWNLOAD_PATH=
 DOWNLOAD_URI=
+OS_VERSION=
+ARCH_TYPE=
 
 # default flags
 SILENT=false
@@ -144,8 +146,10 @@ done
 shift $(($OPTIND - 1))
 
 # check os and architecture
-[[ $(uname -s) == CYGWIN_NT-6* ]] || error "Unsupported OS Version :: $(uname -s)"
-[[ $(uname -m) == x86_64 ]] || error "Unsupported architecture :: $(uname -m)"
+OS_VERSION=$(uname -s)
+[[ "$OS_VERSION" == CYGWIN_NT-6* ]] || error "Unsupported OS Version :: $(uname -s)"
+ARCH_TYPE=$(uname -m)
+[[ "$ARCH_TYPE" == x86_64 ]] || error "Unsupported architecture :: $(uname -m)"
 
 # check binary dependencies
 for i in "${DEPS[@]}"; do
