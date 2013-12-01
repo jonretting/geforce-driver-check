@@ -3,9 +3,9 @@ Geforce Driver Check (GDC)
 ### Checks for new Nvidia Display Drivers then does an automatted unattended install, or with many more options.
 Copyright (c) 2013 Jon Retting
 
-[GDC Github repo](https://github.com/jonretting/geforce-driver-check)
-[GDC Webpage](http://jonretting.github.io/geforce-driver-check/)
-[Latest Milstone v1.030](https://github.com/jonretting/geforce-driver-check/tree/v1.030)
+- [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
+- [GDC Webpage](http://jonretting.github.io/geforce-driver-check/)
+- [Latest Milstone v1.030](https://github.com/jonretting/geforce-driver-check/tree/v1.030)
 
 INFO:
 -----
