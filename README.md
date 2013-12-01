@@ -23,6 +23,7 @@ INFO:
 - Script will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
 - You can check and see if a new version is available with "-C" won't download new driver, won't install
 - Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver"
+- The -r option will enable Nvidia driver installer to prompy user to reboot if needed (untested)
 
 DEPENDENCIES:
 -------------
@@ -30,9 +31,9 @@ wget, 7-Zip, cygpath, wmic (part of windows), PnPutil (part of windows)
 
 CONFIGURE:
 ----------
-- Specify default download folder by changing DOWNLOADDIR="/directory"
-  or use the -d option (do not use windows paths)
-- Specify your root os path, default= /cygdrive/c
+- Specify default download folder by changing DOWNLOAD_PATH="/path" or use the -d option (use only linux/cygwin paths)
+	fallback is /cygdrive/c/Users/current-user=name/Downloads as fallback
+- Specify your root os path if different than ROOT_PATH="/cygdrive/c"
 
 OPTIONS:
 --------
@@ -44,6 +45,7 @@ OPTIONS:
 	-d    Specify download location
 	-C    Only check for new version (returns version#, 0=update available, 1=no update)
 	-A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
+	-r    Don't disable reboot prompt when reboot is needed (could be buged)
 	-V    Displays version info
 	-h    this crupt
 
