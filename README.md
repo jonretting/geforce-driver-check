@@ -34,7 +34,7 @@ wget, 7-Zip, cygpath, wmic (part of windows), PnPutil (part of windows)
 
 CONFIGURE:
 ----------
-- Specify default DOWNLOAD_PATH="/path" or use the -d option fallback is /cygdrive/c/Users/current-user=name/Downloads as fallback
+- Specify default DOWNLOAD_PATH="/path" or use the -d option, fallback is /cygdrive/c/Users/current-user=name/Downloads as fallback
 - Specify your root os path if different than ROOT_PATH="/cygdrive/c"
 
 OPTIONS:
