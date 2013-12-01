@@ -141,7 +141,7 @@ while getopts asyhVcCAdr: OPTIONS; do
 		*) usage; exit 1	;;
 	esac
 done
-shift $(($OPTIND -1))
+shift $(($OPTIND - 1))
 
 # check binary dependencies
 for i in "${DEPS[@]}"; do
