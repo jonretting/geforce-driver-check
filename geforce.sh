@@ -25,6 +25,7 @@ DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
 DOWNLOAD_MIRROR="http://us.download.nvidia.com" #use this download mirror
 ROOT_PATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
 INTERNATIONAL=false
+NOTEBOOK=false
 
 # default vars
 LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us"
@@ -61,7 +62,7 @@ USE_7Z_PATH=false
 CHECK_ONLY=false
 ATTENDED=false
 CLEAN_INSTALL=false
-NOTEBOOK=false
+
 ENABLE_REBOOT_PROMPT=false
 
 # binary dependency array
