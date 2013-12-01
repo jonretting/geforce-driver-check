@@ -38,7 +38,7 @@ CONFIGURE:
 
 EXAMPLES:
 --------
-##### Run default
+#### Run default
 	./geforce.sh
 
 - Run with International (driver package for non English installs)
