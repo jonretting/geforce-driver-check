@@ -1,7 +1,7 @@
 geforce-driver-check
 ====================
 
-### Checks for new Nvidia Display Drivers then does an unattended install, or with many more options 
+### Checks for new Nvidia Display Drivers then does an automatted unattended install, or with many more options.
 [Geforce Driver Check page](http://jonretting.github.io/geforce-driver-check/)
 
 By: Jon Retting
