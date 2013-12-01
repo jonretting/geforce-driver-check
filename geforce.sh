@@ -44,6 +44,7 @@ SZIP=
 EXTRACTSUBDIR=
 LATESTVERNAME= #adds decimal
 CURRENTVERNAME= #adds decimal
+GDC_PATH=
 
 # default flags
 SILENT=false
@@ -57,7 +58,7 @@ NOTEBOOK=false
 # binary dependency array
 DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
 
-error() { echo "Error: $1"; exit 1; }
+error() { echo -e "Error: $1"; exit 1; }
 
 ask() {
 	while true; do
@@ -82,12 +83,14 @@ checkfile() {
 	[[ -e "$1" ]] && return 0 || return 1
 }
 
+# cleanup
 find7z() {
 	local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
 	[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SZIP="${PWD}/${find}/7z.exe"
 	cd "$CWD"
 }
 
+# cleanup
 7zip() {
 	checkdir "${ROOTPATH}/Program Files" &&	cd "${ROOTPATH}/Program Files" && find7z
 	[[ -z $SZIP ]] && checkdir "${ROOTPATH}/Program Files (x86)" &&	cd "${ROOTPATH}/Program Files (x86)" &&	find7z
@@ -144,12 +147,20 @@ for i in "${DEPS[@]}"; do
 done
 
 # check default download directory
-checkdir "$DOWNLOADDIR" || error "Directory not found \"$DOWNLOADDIR\""
+checkdir "$DOWNLOADDIR" || error "Directory not found \"$DOWNLOADDIR\"\ntry '-d' or specify $DOWNLOADDIR manually"
+# check for download dir exists if fail ask to use default from either wmic username extract or home dir in cygwin
+#WIN_USER=$(wmic computersystem get username | sed -n 2p | cut -d '\' -f2)
+#WIN_USER="${HOME} | "
+
+# get/check geforce-driver-check bash source
+checkfile "${BASH_SOURCE}" || error "establishing script source path"
+GDC_PATH=$(dirname ${BASH_SOURCE})
+checkdir "$GDC_PATH" || error "establishing script source directory"
 
 # check for notebook adapater
 VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-checkfile "${CWD}/devices_notebook.txt" || error "checking devices_notebook.txt"
-[[ -n "$VID_DESC" ]] && cat "${CWD}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
+checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
+[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 
 # remove unused oem*.inf packages and set OLDOEMINF from in use
 REMOEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
