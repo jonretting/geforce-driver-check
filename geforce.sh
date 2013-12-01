@@ -20,8 +20,8 @@
 VERSION="1.025"
 
 # cutomizable defaults
-DOWNLOADDIR="/cygdrive/e/Downloads" #download into this directory
-DLHOST="http://us.download.nvidia.com" #use this mirror
+DOWNLOADDIR="/cygdrive/e/Downloads" #download driver file into this directory
+DLHOST="http://us.download.nvidia.com" #use this download mirror
 ROOTPATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
 
 # default vars
@@ -45,6 +45,9 @@ EXTRACTSUBDIR=
 LATESTVERNAME= #adds decimal
 CURRENTVERNAME= #adds decimal
 GDC_PATH=
+CYG_USER=
+WIN_USER=
+DEFAULT_DLDIR=
 
 # default flags
 SILENT=false
@@ -146,11 +149,16 @@ for i in "${DEPS[@]}"; do
 	fi
 done
 
-# check default download directory
-checkdir "$DOWNLOADDIR" || error "Directory not found \"$DOWNLOADDIR\"\ntry '-d' or specify $DOWNLOADDIR manually"
-# check for download dir exists if fail ask to use default from either wmic username extract or home dir in cygwin
-#WIN_USER=$(wmic computersystem get username | sed -n 2p | cut -d '\' -f2)
-#WIN_USER="${HOME} | "
+# get check usernames
+CYG_USER=$(echo "${HOME}" | cut -d '/' -f3)
+[[ -n "$CYG_USER" ]] || error "retrieving cygwin session username"
+WIN_USER=$(wmic computersystem get username | sed -n 2p | awk '{print $1}' | cut -d '\' -f2)
+[[ -n "$WIN_USER" ]] || error "retrieving Windows session username"
+
+# check set default download directory
+DEFAULT_DLDIR="${ROOTPATH}/Users/${WIN_USER}/Downloads"
+checkdir "$DOWNLOADDIR" || DOWNLOADDIR="$DEFAULT_DLDIR"
+checkdir "$DOWNLOADDIR" || error "Directory not found $DOWNLOADDIR try '-d' or specify $DOWNLOADDIR manually"
 
 # get/check geforce-driver-check bash source
 checkfile "${BASH_SOURCE}" || error "establishing script source path"
