@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.027"
+VERSION="1.028"
 
 # cutomizable defaults
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
@@ -29,7 +29,7 @@ LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us"
 DESKTOP_ID="&psid=95"
 NOTEBOOK_ID="&psid=92"
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
-SETUP_ARGS="-nofinish -passive -nosplash -noeula -n" #-n noreboot
+SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 CWD=$PWD
 
 # clear default vars
@@ -58,6 +58,7 @@ CHECK_ONLY=false
 ATTENDED=false
 CLEAN_INSTALL=false
 NOTEBOOK=false
+ENABLE_REBOOT_PROMPT=false
 
 # binary dependency array
 DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
@@ -119,12 +120,13 @@ Example: geforce.sh
 -d    Specify download location
 -C    Only check for new version (returns version#, 0=update available, 1=no update)
 -A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
+-r    Don't disable reboot prompt when reboot is needed (could be buged)
 -V    Displays version info
 -h    this crupt
 Version: ${VERSION}"
 }
 
-while getopts asyhVcCAd: OPTIONS; do
+while getopts asyhVcCAdr: OPTIONS; do
 	case "${OPTIONS}" in
 		a) ATTENDED=true	;;
 		s) SILENT=true		;;
@@ -134,6 +136,7 @@ while getopts asyhVcCAd: OPTIONS; do
 		V) usage | tail -n 1; exit 0	;;
 		C) CHECK_ONLY=true	;;
 		A) ATTENDED=true; EXCLUDE_PKGS=	;;
+		r) ENABLE_REBOOT_PROMPT=true	;;
 		h) usage; exit 0	;;
 		*) usage; exit 1	;;
 	esac
@@ -198,8 +201,7 @@ LATEST_VER_NAME=$(echo $LATEST_VER| sed 's/./.&/4')
 CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
 [[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
 CURRENT_VER_NAME=$(echo $CURRENT_VER | sed 's/./.&/4')
-echo $CURRENT_VER
-echo $CURRENT_VER_NAME
+
 # old oem*.inf file if not already detected
 [[ -z $CURRENT_OEM_INF ]] && CURRENT_OEM_INF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENT_VER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
 [[ $CURRENT_OEM_INF == oem*.inf ]] || error "Old oem*.inf file :: $CURRENT_OEM_INF"
@@ -238,6 +240,7 @@ echo "Done"
 $SILENT && SETUP_ARGS+=" -s"
 $CLEAN_INSTALL && SETUP_ARGS+=" -clean"
 $ATTENDED && SETUP_ARGS=
+$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
 
 # run the installer with args
 echo -ne "Executing installer setup..."
