@@ -17,45 +17,45 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.025"
+VERSION="1.026"
 
 # cutomizable defaults
-DOWNLOADDIR="/cygdrive/e/Downloads" #download driver file into this directory
-DLHOST="http://us.download.nvidia.com" #use this download mirror
-ROOTPATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
+DOWNLOAD_DIR="/cygdrive/e/Downloads" #download driver file into this directory
+DL_HOST="http://us.download.nvidia.com" #use this download mirror
+ROOT_PATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
 
 # default vars
 LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us"
 DESKTOP_ID="&psid=95"
 NOTEBOOK_ID="&psid=92"
-EXCLUDEPKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
-SETUPARGS="-nofinish -passive -nosplash -noeula -n" #-n noreboot
+EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
+SETUP_ARGS="-nofinish -passive -nosplash -noeula -n" #-n noreboot
 CWD=$PWD
 
 # clear default vars
-FILEDATA=
-FILENAME=
-LATESTVER=
-REMOEMS=
-OLDOEMINF=
-CURRENTVER=
+FILE_DATA=
+FILE_NAME=
+LATEST_VER=
+REM_OEMS=
+OLD_OEM_INF=
+CURRENT_VER=
 DLURI=
-SZIP=
-EXTRACTSUBDIR=
-LATESTVERNAME= #adds decimal
-CURRENTVERNAME= #adds decimal
+SEVEN_ZIP=
+EXTRACT_SUB_DIR=
+LATEST_VER_NAME= #adds decimal
+CURRENT_VER_NAME= #adds decimal
 GDC_PATH=
 CYG_USER=
 WIN_USER=
-DEFAULT_DLDIR=
+DEFAULT_DOWN_DIR=
 
 # default flags
 SILENT=false
 YES=false
-USE7ZPATH=false
-CHECKONLY=false
+USE_7Z_PATH=false
+CHECK_ONLY=false
 ATTENDED=false
-CLEANINSTALL=false
+CLEAN_INSTALL=false
 NOTEBOOK=false
 
 # binary dependency array
@@ -89,20 +89,20 @@ checkfile() {
 # cleanup
 find7z() {
 	local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
-	[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SZIP="${PWD}/${find}/7z.exe"
+	[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVEN_ZIP="${PWD}/${find}/7z.exe"
 	cd "$CWD"
 }
 
 # cleanup
 7zip() {
-	checkdir "${ROOTPATH}/Program Files" &&	cd "${ROOTPATH}/Program Files" && find7z
-	[[ -z $SZIP ]] && checkdir "${ROOTPATH}/Program Files (x86)" &&	cd "${ROOTPATH}/Program Files (x86)" &&	find7z
-	[[ -z $SZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
+	checkdir "${ROOT_PATH}/Program Files" &&	cd "${ROOT_PATH}/Program Files" && find7z
+	[[ -z $SEVEN_ZIP ]] && checkdir "${ROOT_PATH}/Program Files (x86)" &&	cd "${ROOT_PATH}/Program Files (x86)" &&	find7z
+	[[ -z $SEVEN_ZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
 	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
 		local BINPATH=$(which ln | sed -e "s/\/ln//")
-		checkdir "$BINPATH" && ln -s "$SZIP" "$BINPATH"
+		checkdir "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH"
 	else
-		USE7ZPATH=true
+		USE_7Z_PATH=true
 	fi
 }
 
@@ -128,11 +128,11 @@ while getopts asyhVcCAd: OPTIONS; do
 		a) ATTENDED=true	;;
 		s) SILENT=true		;;
 		y) YES=true			;;
-		d) DOWNLOADDIR="$OPTARG"	;;
-		c) CLEANINSTALL=true	;;
+		d) DOWNLOAD_DIR="$OPTARG"	;;
+		c) CLEAN_INSTALL=true	;;
 		V) usage | tail -n 1; exit 0	;;
-		C) CHECKONLY=true	;;
-		A) ATTENDED=true; EXCLUDEPKGS=	;;
+		C) CHECK_ONLY=true	;;
+		A) ATTENDED=true; EXCLUDE_PKGS=	;;
 		h) usage; exit 0	;;
 		*) usage; exit 1	;;
 	esac
@@ -156,9 +156,9 @@ WIN_USER=$(wmic computersystem get username | sed -n 2p | awk '{print $1}' | cut
 [[ -n "$WIN_USER" ]] || error "retrieving Windows session username"
 
 # check set default download directory
-DEFAULT_DLDIR="${ROOTPATH}/Users/${WIN_USER}/Downloads"
-checkdir "$DOWNLOADDIR" || DOWNLOADDIR="$DEFAULT_DLDIR"
-checkdir "$DOWNLOADDIR" || error "Directory not found $DOWNLOADDIR try '-d' or specify $DOWNLOADDIR manually"
+DEFAULT_DOWN_DIR="${ROOT_PATH}/Users/${WIN_USER}/Downloads"
+checkdir "$DOWNLOAD_DIR" || DOWNLOAD_DIR="$DEFAULT_DOWN_DIR"
+checkdir "$DOWNLOAD_DIR" || error "Directory not found $DOWNLOAD_DIR try '-d' or specify $DOWNLOAD_DIR manually"
 
 # get/check geforce-driver-check bash source
 checkfile "${BASH_SOURCE}" || error "establishing script source path"
@@ -170,86 +170,86 @@ VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
 checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
 [[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 
-# remove unused oem*.inf packages and set OLDOEMINF from in use
-REMOEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
-if [[ $(echo "$REMOEMS" | wc -l) -gt 1 ]]; then
-	for REOEM in $REMOEMS; do
+# remove unused oem*.inf packages and set OLD_OEM_INF from in use
+REM_OEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
+if [[ $(echo "$REM_OEMS" | wc -l) -gt 1 ]]; then
+	for REOEM in $REM_OEMS; do
 		[[ $REOEM == oem*.inf ]] || error "Unexpected value in REOEMS array :: $REOEM"
-		PnPutil -d $REOEM >/dev/null || OLDOEMINF="$REOEM"
+		PnPutil -d $REOEM >/dev/null || OLD_OEM_INF="$REOEM"
 	done
 fi
 
 # file data query
 $NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
-FILEDATA=$(wget -qO- $(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
-[[ $FILEDATA == *.exe ]] || error "Unexpected FILEDATA returned :: $FILEDATA"
+FILE_DATA=$(wget -qO- $(wget -qO- "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
+[[ $FILE_DATA == *.exe ]] || error "Unexpected FILE_DATA returned :: $FILE_DATA"
 
 # get file name only
-FILENAME=$(echo "$FILEDATA" | cut -d '/' -f4)
-[[ $FILENAME == *.exe ]] || error "Unexpected FILENAME returned :: $FILENAME"
+FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
+[[ $FILE_NAME == *.exe ]] || error "Unexpected FILE_NAME returned :: $FILE_NAME"
 
 # get latest version
-LATESTVER=$(echo "$FILEDATA" | cut -d '/' -f3 | sed -e "s/\.//")
-[[ $LATESTVER =~ ^[0-9]+$ ]] || error "LATESTVER not a number :: $LATESTVER"
-LATESTVERNAME=$(echo $LATESTVER| sed 's/./.&/4')
+LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
+[[ $LATEST_VER =~ ^[0-9]+$ ]] || error "LATEST_VER not a number :: $LATEST_VER"
+LATEST_VER_NAME=$(echo $LATEST_VER| sed 's/./.&/4')
 
 # get current version
-CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
-[[ $CURRENTVER =~ ^[0-9]+$ ]] || error "CURRENTVER not a number :: $CURRENTVER"
-CURRENTVERNAME=$(echo $CURRENTVER | sed 's/./.&/4')
+CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
+[[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
+CURRENT_VER_NAME=$(echo $CURRENT_VER | sed 's/./.&/4')
 
 # old oem*.inf file if not already detected
-[[ -z $OLDOEMINF ]] && OLDOEMINF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENTVER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
-[[ $OLDOEMINF == oem*.inf ]] || error "Old oem*.inf file :: $OLDOEMINF"
+[[ -z $OLD_OEM_INF ]] && OLD_OEM_INF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENT_VER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
+[[ $OLD_OEM_INF == oem*.inf ]] || error "Old oem*.inf file :: $OLD_OEM_INF"
 
 # store full uri
-DLURI="${DLHOST}${FILEDATA}"
+DLURI="${DL_HOST}${FILE_DATA}"
 
 # check versions
-if [[ $CURRENTVER -eq $LATESTVER ]]; then
-	$CHECKONLY && exit 1
-	echo "Already latest version: $CURRENTVERNAME"
+if [[ $CURRENT_VER -eq $LATEST_VER ]]; then
+	$CHECK_ONLY && exit 1
+	echo "Already latest version: $CURRENT_VER_NAME"
 	exit 0
 fi
-$CHECKONLY && { echo "$CURRENTVERNAME --> $LATESTVERNAME"; exit 0; }
+$CHECK_ONLY && { echo "$CURRENT_VER_NAME --> $LATEST_VER_NAME"; exit 0; }
 
 # run tasks
 echo -e "New version available!
-Current: $CURRENTVERNAME
-Latest:  $LATESTVERNAME
-Downloading latest version into \"$DOWNLOADDIR\"..."
-cd "$DOWNLOADDIR" || error "Changing to download directory \"$DOWNLOADDIR\""
+Current: $CURRENT_VER_NAME
+Latest:  $LATEST_VER_NAME
+Downloading latest version into \"$DOWNLOAD_DIR\"..."
+cd "$DOWNLOAD_DIR" || error "Changing to download directory \"$DOWNLOAD_DIR\""
 wget -N "$DLURI" || error "wget downloading file \"$DLURI\""
 
 # ask to isntall
-ask "Extract and Install new version ($LATESTVERNAME) now?" || { echo "User cancelled"; exit 0; }
+ask "Extract and Install new version ($LATEST_VER_NAME) now?" || { echo "User cancelled"; exit 0; }
 
 # unarchive new version download
-checkdir "${ROOTPATH}/NVIDIA" || mkdir "${ROOTPATH}/NVIDIA" || error "creating directory :: \"$ROOTPATH/NVIDIA\""
-EXTRACTSUBDIR="${ROOTPATH}/NVIDIA/GDC-${LATESTVERNAME}"
+checkdir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating directory :: \"$ROOT_PATH/NVIDIA\""
+EXTRACT_SUB_DIR="${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
 echo -ne "Extracting new driver archive..."
-checkdir "$EXTRACTSUBDIR" && rm -rf "$EXTRACTSUBDIR"
-7z x "$(cygpath -wap "${DOWNLOADDIR}/${FILENAME}")" -o"$(cygpath -wap "${EXTRACTSUBDIR}")" $EXCLUDEPKGS >/dev/null || error "extracting new download"
+checkdir "$EXTRACT_SUB_DIR" && rm -rf "$EXTRACT_SUB_DIR"
+7z x "$(cygpath -wap "${DOWNLOAD_DIR}/${FILE_NAME}")" -o"$(cygpath -wap "${EXTRACT_SUB_DIR}")" $EXCLUDE_PKGS >/dev/null || error "extracting new download"
 echo "Done"
 
 # create setup.exe options args
-$SILENT && SETUPARGS+=" -s"
-$CLEANINSTALL && SETUPARGS+=" -clean"
-$ATTENDED && SETUPARGS=
+$SILENT && SETUP_ARGS+=" -s"
+$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
+$ATTENDED && SETUP_ARGS=
 
 # run the installer with args
 echo -ne "Executing installer setup..."
-cygstart -w "$EXTRACTSUBDIR/setup.exe" "$SETUPARGS" || error "Installation failed or user interupted"
+cygstart -w "$EXTRACT_SUB_DIR/setup.exe" "$SETUP_ARGS" || error "Installation failed or user interupted"
 echo "Done"
 
 # remove old oem inf package
 echo -ne "Removing old driver package..."
-PnPutil -d $OLDOEMINF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLDOEMINF"
+PnPutil -d $OLD_OEM_INF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $OLD_OEM_INF"
 echo "Done"
 
 # final check verify new version
-CURRENTVER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
-[[ $CURRENTVER -eq $LATESTVER ]] || error "After all that your driver version didn't change!"
+CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
+[[ $CURRENT_VER -eq $LATEST_VER ]] || error "After all that your driver version didn't change!"
 echo "Driver update successfull!"
 
 exit 0
