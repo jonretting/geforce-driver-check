@@ -23,9 +23,9 @@ VERSION="1.030"
 # cutomizable defaults
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
 DOWNLOAD_MIRROR="http://us.download.nvidia.com" #use this download mirror
-ROOT_PATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//")
-INTERNATIONAL=false
-NOTEBOOK=false
+ROOT_PATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//") # auto determines root path via cygpath
+INTERNATIONAL=false		# true = use international driver package version multi language support
+NOTEBOOK=false			# true = use notebook driver version, skip check adapter type
 
 # default vars
 LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us"
@@ -35,7 +35,7 @@ EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.O
 SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 CWD="$PWD"
 
-# clear default vars
+# clear default vars (do not edit)
 FILE_DATA=
 FILE_NAME=
 LATEST_VER=
@@ -55,14 +55,13 @@ DOWNLOAD_URI=
 OS_VERSION=
 ARCH_TYPE=
 
-# default flags
+# default flags (change if you know what you are doing)
 SILENT=false
 YES_TO_ALL_TO_ALL=false
 USE_7Z_PATH=false
 CHECK_ONLY=false
 ATTENDED=false
 CLEAN_INSTALL=false
-
 ENABLE_REBOOT_PROMPT=false
 
 # binary dependency array
