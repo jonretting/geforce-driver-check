@@ -30,7 +30,7 @@ DESKTOP_ID="&psid=95"
 NOTEBOOK_ID="&psid=92"
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 SETUP_ARGS="-nofinish -passive -nosplash -noeula"
-CWD=$PWD
+CWD="$PWD"
 
 # clear default vars
 FILE_DATA=
@@ -195,15 +195,15 @@ FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
 # get latest version
 LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 [[ $LATEST_VER =~ ^[0-9]+$ ]] || error "LATEST_VER not a number :: $LATEST_VER"
-LATEST_VER_NAME=$(echo $LATEST_VER| sed 's/./.&/4')
+LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 
 # get current version
 CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
 [[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
-CURRENT_VER_NAME=$(echo $CURRENT_VER | sed 's/./.&/4')
+CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
 
 # old oem*.inf file if not already detected
-[[ -z $CURRENT_OEM_INF ]] && CURRENT_OEM_INF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 "$(echo "$CURRENT_VER" | sed 's/./.&/2')" | awk '/Published/ {print $4}')
+[[ -z $CURRENT_OEM_INF ]] && CURRENT_OEM_INF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 $(echo "$CURRENT_VER" | sed "s/./.&/2") | awk '/Published/ {print $4}')
 [[ $CURRENT_OEM_INF == oem*.inf ]] || error "Old oem*.inf file :: $CURRENT_OEM_INF"
 
 # store full uri
