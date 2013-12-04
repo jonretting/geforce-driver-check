@@ -182,14 +182,12 @@ GDC_PATH=$(dirname ${BASH_SOURCE})
 checkdir "$GDC_PATH" || error "establishing script source path"
 
 # check for notebook adapater
-if ! $INTERNATIONAL; then
-	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-	checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
-	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
-fi
+VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
+checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
+[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 
 # remove unused oem*.inf packages and set CURRENT_OEM_INF from in use
-REM_OEMS=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/Published/ {print $4}')
+REM_OEMS=$(PnPutil.exe -e | awk -v RS= '/Display adapter/ && /NVIDIA/ && /version|name/' | grep -oe "oem.\.inf")
 if [[ $(echo "$REM_OEMS" | wc -l) -gt 0 ]] && ! $CHECK_ONLY; then
 	for REOEM in $REM_OEMS; do
 		[[ $REOEM == oem*.inf ]] || error "Unexpected value in REOEMS array :: $REOEM"
@@ -217,7 +215,7 @@ CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NV
 CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
 
 # old oem*.inf file if not already detected
-[[ -z $CURRENT_OEM_INF ]] && CURRENT_OEM_INF=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | grep -B 3 $(echo "$CURRENT_VER" | sed "s/./.&/2") | awk '/Published/ {print $4}')
+[[ -z $CURRENT_OEM_INF ]] && CURRENT_OEM_INF=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/ && match($0, /oem[0-9]+\.inf/) {print substr($0, RSTART, RLENGTH) }')
 [[ $CURRENT_OEM_INF == oem*.inf ]] || error "Old oem*.inf file :: $CURRENT_OEM_INF"
 
 # store full uri
