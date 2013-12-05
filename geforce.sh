@@ -18,7 +18,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.031"
+VERSION="1.037"
 
 # cutomizable defaults
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
@@ -186,15 +186,6 @@ VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
 checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
 [[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 
-# remove unused oem*.inf packages and set CURRENT_OEM_INF from in use
-REM_OEMS=$(PnPutil.exe -e | awk -v RS= '/Display adapter/ && /NVIDIA/ && /version|name/' | grep -oe "oem.\.inf")
-if [[ $(echo "$REM_OEMS" | wc -l) -gt 0 ]] && ! $CHECK_ONLY; then
-	for REOEM in $REM_OEMS; do
-		[[ $REOEM == oem*.inf ]] || error "Unexpected value in REOEMS array :: $REOEM"
-		PnPutil -d $REOEM >/dev/null || CURRENT_OEM_INF="$REOEM"
-	done
-fi
-
 # file data query
 $NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
 FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
@@ -214,39 +205,50 @@ CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NV
 [[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
 CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
 
-# old oem*.inf file if not already detected
-[[ -z $CURRENT_OEM_INF ]] && CURRENT_OEM_INF=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/ && match($0, /oem[0-9]+\.inf/) {print substr($0, RSTART, RLENGTH) }')
-[[ $CURRENT_OEM_INF == oem*.inf ]] || error "Old oem*.inf file :: $CURRENT_OEM_INF"
-
-# store full uri
+# store full dl uri
 DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 $INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
 
 # check versions
-if [[ $CURRENT_VER -eq $LATEST_VER ]]; then
-	$CHECK_ONLY && exit 1
+if [[ $CURRENT_VER -ge $LATEST_VER ]]; then
+	# make these notifications nicer
+	$CHECK_ONLY && { echo "Already latest version: $CURRENT_VER_NAME"; exit 1; }
 	echo "Already latest version: $CURRENT_VER_NAME"
 	exit 0
 fi
-$CHECK_ONLY && { echo "$CURRENT_VER_NAME --> $LATEST_VER_NAME"; exit 0; }
+# make these notifications nicer
+$CHECK_ONLY && { echo -e "New version available!\nCurrent: ${CURRENT_VER_NAME}\nLatest:  ${LATEST_VER_NAME}"; exit 1; }
 
 # run tasks
-echo -e "New version available!
-Current: $CURRENT_VER_NAME
-Latest:  $LATEST_VER_NAME
-Downloading latest version into \"$DOWNLOAD_PATH\"..."
+echo -e "New version available!\nCurrent: $CURRENT_VER_NAME\nLatest:  $LATEST_VER_NAME"
+
+# ask to download and install (continue)
+ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?" || { echo "User cancelled"; exit 0; }
+
+echo -e "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
 cd "$DOWNLOAD_PATH" || error "cd to download path :: $DOWNLOAD_PATH"
 wget -N "$DOWNLOAD_URI" || error "wget downloading file :: $DOWNLOAD_URI"
 
-# ask to isntall
-ask "Extract and Install new version ($LATEST_VER_NAME) now?" || { echo "User cancelled"; exit 0; }
+# remove unused oem*.inf packages and set CURRENT_OEM_INF
+REM_OEMS=($(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/ && match($0, /oem[0-9]+\.inf/) {print substr($0, RSTART, RLENGTH) }'))
+if [[ "${#REM_OEMS[@]}" -gt 1 ]]; then
+	for REOEM in "${REM_OEMS[@]}"; do
+		[[ "$REOEM" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in REOEMS array :: $REOEM"
+		PnPutil -d $REOEM >/dev/null || CURRENT_OEM_INF="$REOEM"
+	done
+elif [[ "${#REM_OEMS[@]}" -eq 1 ]]; then
+	CURRENT_OEM_INF="$REM_OEMS"
+	[[ "$CURRENT_OEM_INF" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in CURRENT_OEM_INF array :: $CURRENT_OEM_INF"
+else
+	error "Could not get proper CURRENT_OEM_INF value"
+fi
 
 # unarchive new version download
 checkdir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
 EXTRACT_SUB_PATH="${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
 echo -ne "Extracting new driver archive..."
 checkdir "$EXTRACT_SUB_PATH" && rm -rf "$EXTRACT_SUB_PATH"
-7z x "$(cygpath -wap "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wap "${EXTRACT_SUB_PATH}")" $EXCLUDE_PKGS >/dev/null || error "extracting new download"
+7z x "$(cygpath -wap "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wap "${EXTRACT_SUB_PATH}")" $EXCLUDE_PKGS >/dev/null || error "extracting new driver archive"
 echo "Done"
 
 # create setup.exe options args
@@ -262,7 +264,7 @@ echo "Done"
 
 # remove old oem inf package
 echo -ne "Removing old driver package..."
-PnPutil -d $CURRENT_OEM_INF >/dev/null || error "Removing old oem*.inf package (maybe in use):: $CURRENT_OEM_INF"
+PnPutil -d $CURRENT_OEM_INF >/dev/null || echo -e "Error Removing old oem*.inf package (maybe in use, system might require reboot)"
 echo "Done"
 
 # final check verify new version
