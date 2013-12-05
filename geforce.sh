@@ -248,7 +248,7 @@ checkdir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating
 EXTRACT_SUB_PATH="${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
 echo -ne "Extracting new driver archive..."
 checkdir "$EXTRACT_SUB_PATH" && rm -rf "$EXTRACT_SUB_PATH"
-7z x "$(cygpath -wap "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wap "${EXTRACT_SUB_PATH}")" $EXCLUDE_PKGS >/dev/null || error "extracting new driver archive"
+7z x "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wa "${EXTRACT_SUB_PATH}")" $EXCLUDE_PKGS >/dev/null || error "extracting new driver archive"
 echo "Done"
 
 # create setup.exe options args
