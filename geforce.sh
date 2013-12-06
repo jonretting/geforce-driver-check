@@ -39,6 +39,16 @@ CWD="$PWD"
 SZIP_DOWNLOAD_URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 MSIEXEC_PATH="${ROOT_PATH}/Windows/System32/msiexec.exe"
 
+# default flags (change if you know what you are doing)
+SILENT=false
+YES_TO_ALL=false
+USE_7Z_PATH=false
+CHECK_ONLY=false
+ATTENDED=false
+CLEAN_INSTALL=false
+ENABLE_REBOOT_PROMPT=false
+DEBUG=false
+
 # clear default vars (do not edit)
 FILE_DATA=
 FILE_NAME=
@@ -59,16 +69,6 @@ DOWNLOAD_URI=
 OS_VERSION=
 ARCH_TYPE=
 LOCAL_DRIVER_DATA=
-
-# default flags (change if you know what you are doing)
-SILENT=false
-YES_TO_ALL=false
-USE_7Z_PATH=false
-CHECK_ONLY=false
-ATTENDED=false
-CLEAN_INSTALL=false
-ENABLE_REBOOT_PROMPT=false
-DEBUG=false
 
 # binary dependency array
 DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
