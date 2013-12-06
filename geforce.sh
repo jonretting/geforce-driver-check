@@ -147,6 +147,11 @@ wgetdli() {
 	fi
 }
 
+archive() {
+	gzip -d "${GDC_PATH}/devices_notebook.txt.gz" || error "gzip decompress devices_notebook.txt.gz"
+	return 0
+}
+
 usage() {
 	echo "Geforce Driver Check
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
@@ -217,10 +222,10 @@ checkdir "$GDC_PATH" || error "establishing script source path"
 
 # check for notebook adapater
 VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-checkfile "${GDC_PATH}/devices_notebook.txt" || error "checking devices_notebook.txt"
+checkfile "${GDC_PATH}/devices_notebook.txt" || archive
 [[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 
-# file data query
+# online file data query
 $NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
 FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
 [[ $FILE_DATA == *.exe ]] || error "Unexpected FILE_DATA returned :: $FILE_DATA"
@@ -228,20 +233,22 @@ FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driver
 # get file name only
 FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
 [[ $FILE_NAME == *.exe ]] || error "Unexpected FILE_NAME returned :: $FILE_NAME"
-
-echo "$FILE_DATA"
-
-exit 0
 # get latest version
 LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 [[ $LATEST_VER =~ ^[0-9]+$ ]] || error "LATEST_VER not a number :: $LATEST_VER"
 LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 
-# get current version
-CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
-[[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
-CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
+# local driver data query
+LOCAL_DRIVER_DATA=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/')
 
+# get current version
+CURRENT_VER=$(echo "$LOCAL_DRIVER_DATA" | awk '/version/ {print $7}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
+#CURRENT_VER=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/ && match($0, /[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,5}/) {print substr($0, RSTART, RLENGTH) }')
+#[[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
+CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
+echo $LATEST_VER
+echo $CURRENT_VER
+exit 0
 # store full dl uri
 DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 $INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
