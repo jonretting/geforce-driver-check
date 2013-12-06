@@ -253,12 +253,13 @@ $INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/internat
 
 # check versions
 if [[ $CURRENT_VER -ge $LATEST_VER ]]; then
-	# make these notifications nicer
+	# make notification nicer
 	$CHECK_ONLY && { echo "Already latest version: $CURRENT_VER_NAME"; exit 1; }
 	echo "Already latest version: $CURRENT_VER_NAME"
 	exit 0
 fi
-# make these notifications nicer
+
+# make  notification nicer
 $CHECK_ONLY && { echo -e "New version available!\nCurrent: ${CURRENT_VER_NAME}\nLatest:  ${LATEST_VER_NAME}"; exit 1; }
 
 # run tasks
