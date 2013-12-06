@@ -148,9 +148,12 @@ wgetdli() {
 	fi
 }
 
-archive() {
-	gzip -d "${GDC_PATH}/devices_notebook.txt.gz" || error "gzip decompress devices_notebook.txt.gz"
-	return 0
+devarchive() {
+	if checkfile "${GDC_PATH}/devices_notebook.txt.gz"; then
+		gzip -df "${GDC_PATH}/devices_notebook.txt.gz" || error "gzip decompress devices_notebook.txt.gz"
+		checkfile "${GDC_PATH}/devices_notebook.txt" || error "cannot read or missing :: ${GDC_PATH}/devices_notebook.txt"
+		return 0
+	fi
 }
 
 usage() {
@@ -223,7 +226,7 @@ checkdir "$GDC_PATH" || error "establishing script source path"
 
 # check for notebook adapater
 VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-checkfile "${GDC_PATH}/devices_notebook.txt" || archive
+devarchive || error "in devices_notebook"
 [[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 
 # online file data query
