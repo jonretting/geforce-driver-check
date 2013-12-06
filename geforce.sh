@@ -153,7 +153,7 @@ wgetdli() {
 
 devarchive() {
 	if checkfile "${GDC_PATH}/devices_notebook.txt.gz"; then
-		gzip -df "${GDC_PATH}/devices_notebook.txt.gz" || error "gzip decompress devices_notebook.txt.gz"
+		gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || error "gzip decompress devices_notebook.txt.gz"
 		checkfile "${GDC_PATH}/devices_notebook.txt" || error "cannot read or missing :: ${GDC_PATH}/devices_notebook.txt"
 		return 0
 	fi
