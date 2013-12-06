@@ -18,7 +18,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.039"
+VERSION="1.040"
 
 # cutomizable defaults
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
@@ -311,7 +311,7 @@ PnPutil -d $CURRENT_OEM_INF >/dev/null || echo -e "Error Removing old oem*.inf p
 echo "Done"
 
 # final check verify new version
-CURRENT_VER=$(PnPutil.exe -e | grep -C 2 "Display adapters" | grep -A 3 -B 1 "NVIDIA" | awk '/version/ {print $7}' | cut -d '.' -f3,4 | sed -e "s/\.//" | sed -r "s/^.{1}//")
+CURRENT_VER=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/' | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
 [[ $CURRENT_VER -eq $LATEST_VER ]] || error "After all that your driver version didn't change!"
 echo "Driver update successfull!"
 
