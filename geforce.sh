@@ -56,6 +56,7 @@ FALLBACK_DOWNLOAD_PATH=
 DOWNLOAD_URI=
 OS_VERSION=
 ARCH_TYPE=
+LOCAL_DRIVER_DATA=
 
 # default flags (change if you know what you are doing)
 SILENT=false
@@ -242,13 +243,10 @@ LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 LOCAL_DRIVER_DATA=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/')
 
 # get current version
-CURRENT_VER=$(echo "$LOCAL_DRIVER_DATA" | awk '/version/ {print $7}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
-#CURRENT_VER=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/ && match($0, /[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,5}/) {print substr($0, RSTART, RLENGTH) }')
-#[[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
+CURRENT_VER=$(echo $LOCAL_DRIVER_DATA | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
+[[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
 CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
-echo $LATEST_VER
-echo $CURRENT_VER
-exit 0
+
 # store full dl uri
 DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 $INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
@@ -274,7 +272,7 @@ cd "$DOWNLOAD_PATH" || error "cd to download path :: $DOWNLOAD_PATH"
 wget -N "$DOWNLOAD_URI" || error "wget downloading file :: $DOWNLOAD_URI"
 
 # remove unused oem*.inf packages and set CURRENT_OEM_INF
-REM_OEMS=($(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/ && match($0, /oem[0-9]+\.inf/) {print substr($0, RSTART, RLENGTH) }'))
+REM_OEMS=$(echo $LOCAL_DRIVER_DATA | grep -Eo 'oem[0-9]+\.inf')
 if [[ "${#REM_OEMS[@]}" -gt 1 ]]; then
 	for REOEM in "${REM_OEMS[@]}"; do
 		[[ "$REOEM" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in REOEMS array :: $REOEM"
