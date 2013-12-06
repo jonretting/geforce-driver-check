@@ -88,3 +88,8 @@ TODO:
 - make crontab friendly
 - allow for other types ex: x86 version, only whql
 - specify root path as option
+- add reinstallation option force reinstall
+- maybe add D3DOverrider 
+- add ntune o/c settings option show oc pane
+- maybe add NVIDIA Pixel Clock Patcher
+- make readme not terrible
