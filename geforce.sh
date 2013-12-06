@@ -207,7 +207,7 @@ done
 # set usernames
 CYG_USER=$(echo "${HOME}" | cut -d '/' -f3)
 [[ -n "$CYG_USER" ]] || error "retrieving cygwin session username"
-WIN_USER=$(wmic computersystem get username | sed -n 2p | awk '{print $1}' | cut -d '\' -f2)
+WIN_USER=$(wmic computersystem get username | awk -F"\\" -v RS= '{print $3}')
 [[ -n "$WIN_USER" ]] || error "retrieving Windows session username"
 
 # set geforce-driver-check script path
@@ -229,6 +229,9 @@ FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driver
 FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
 [[ $FILE_NAME == *.exe ]] || error "Unexpected FILE_NAME returned :: $FILE_NAME"
 
+echo "$FILE_DATA"
+
+exit 0
 # get latest version
 LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 [[ $LATEST_VER =~ ^[0-9]+$ ]] || error "LATEST_VER not a number :: $LATEST_VER"
