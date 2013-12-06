@@ -5,8 +5,7 @@ Copyright (c) 2013 Jon Retting
 
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC Webpage](http://jonretting.github.io/geforce-driver-check/)
-- [Latest Milstone v1.030](https://github.com/jonretting/geforce-driver-check/tree/v1.030)
-- [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
+- [Latest Milstone v1.041](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-beta-v1.041.zip/download)- [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
 INFO:
 -----
@@ -15,6 +14,8 @@ INFO:
 - Works with Desktop and Notebook Graphics adapaters
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
+- If 7zip is not found, GDC will prompt to download x64 msi, then prompt to attended or unattended install
+- If wget is not found, GDC will look for apt-cyg and prompt to autoinstall
 - Supports the international driver package version when "-i" is envoked
 - Only installs Display Driver, HD Audio, and PshyX
 - Prompts to install after downloading (no prompt, no progress when "-s" is envoked
@@ -32,7 +33,7 @@ INFO:
 
 DEPENDENCIES:
 -------------
-wget, 7-Zip, cygpath, wmic (part of windows), PnPutil (part of windows)
+wget, 7-Zip (prompts to install if not found), cygpath, wmic (part of windows), PnPutil (part of windows)
 
 CONFIGURE:
 ----------
