@@ -57,7 +57,7 @@ ARCH_TYPE=
 
 # default flags (change if you know what you are doing)
 SILENT=false
-YES_TO_ALL_TO_ALL=false
+YES_TO_ALL=false
 USE_7Z_PATH=false
 CHECK_ONLY=false
 ATTENDED=false
