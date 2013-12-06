@@ -18,7 +18,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.040"
+VERSION="1.041"
 
 # cutomizable defaults
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
@@ -66,6 +66,7 @@ CHECK_ONLY=false
 ATTENDED=false
 CLEAN_INSTALL=false
 ENABLE_REBOOT_PROMPT=false
+DEBUG=false
 
 # binary dependency array
 DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
@@ -255,6 +256,7 @@ DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 $INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
 
 # check versions
+$DEBUG && CURRENT_VER="33090"
 if [[ $CURRENT_VER -ge $LATEST_VER ]]; then
 	# make notification nicer
 	$CHECK_ONLY && { echo "Already latest version: $CURRENT_VER_NAME"; exit 1; }
@@ -305,12 +307,20 @@ $ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
 
 # run the installer with args
 echo -ne "Executing installer setup..."
-cygstart -w "$EXTRACT_SUB_PATH/setup.exe" "$SETUP_ARGS" || error "Installation failed or user interupted"
+if $DEBUG; then
+	echo "cygstart -w $EXTRACT_SUB_PATH/setup.exe $SETUP_ARGS"
+else
+	cygstart -w "$EXTRACT_SUB_PATH/setup.exe" "$SETUP_ARGS" || error "Installation failed or user interupted"
+fi
 echo "Done"
 
 # remove old oem inf package
 echo -ne "Removing old driver package..."
-PnPutil -d $CURRENT_OEM_INF >/dev/null || echo -e "Error Removing old oem*.inf package (maybe in use, system might require reboot)"
+if $DEBUG; then
+	echo "PnPutil -d $CURRENT_OEM_INF >/dev/null"
+else
+	PnPutil -d $CURRENT_OEM_INF >/dev/null || echo -e "Error Removing old oem*.inf package (maybe in use, system might require reboot)"
+fi
 echo "Done"
 
 # final check verify new version
