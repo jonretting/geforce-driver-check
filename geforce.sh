@@ -18,7 +18,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION="1.037"
+VERSION="1.039"
 
 # cutomizable defaults
 DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
@@ -34,6 +34,8 @@ NOTEBOOK_ID="&psid=92"
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 CWD="$PWD"
+SZIP_DOWNLOAD_URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
+MSIEXEC_PATH="${ROOT_PATH}/Windows/System32/msiexec.exe"
 
 # clear default vars (do not edit)
 FILE_DATA=
@@ -71,44 +73,77 @@ error() { echo -e "Error: $1"; exit 1; }
 
 ask() {
 	while true; do
-		if [[ "${2:-}" = "Y" ]]; then prompt="Y/n"; default=Y
-		elif [[ "${2:-}" = "N" ]]; then prompt="y/N"; default=N
-		else prompt="y/n"; default=;
+		if $YES_TO_ALL; then 
+			local REPLY=Y; local default=Y
+		elif [[ "$2" ]]; then
+			local prompt="$2"; local default=
+		else
+			local prompt="y/n"; local default=
 		fi
-		if $YES_TO_ALL; then REPLY=Y; default=Y
-		else echo -ne "$1 "; read -p "[$prompt] " REPLY; [[ -z "$REPLY" ]] && REPLY=$default
+		if [[ -z $default ]]; then
+			echo -ne "$1 "; read -p "[$prompt] " REPLY; [[ -z "$REPLY" ]] && local REPLY=$default
 		fi
 		case "$REPLY" in
 			Y*|y*) return 0 ;; N*|n*) return 1 ;;
+			1*) return 0 ;; 2*) return 1 ;;
 		esac
 	done
 }
 
 checkdir() {
-	[[ -d "$1" ]] && return 0 || return 1
+	[[ -d "$1" ]] && [[ -r "$1" ]] && return 0 || return 1
 }
 
 checkfile() {
-	[[ -e "$1" ]] && return 0 || return 1
+	[[ -e "$1" ]] && [[ -r "$1" ]] && return 0 || return 1
 }
 
-# cleanup
-find7z() {
-	local find=$(find . -maxdepth 1 -type d -name "7-Zip" -print | sed -e "s/\.\///")
-	[[ "$find" == "7-Zip" ]] && [[ -e "${find}/7z.exe" ]] && SEVEN_ZIP="${PWD}/${find}/7z.exe"
-	cd "$CWD"
-}
-
-# cleanup
 7zip() {
-	checkdir "${ROOT_PATH}/Program Files" &&	cd "${ROOT_PATH}/Program Files" && find7z
-	[[ -z $SEVEN_ZIP ]] && checkdir "${ROOT_PATH}/Program Files (x86)" &&	cd "${ROOT_PATH}/Program Files (x86)" &&	find7z
+	7zfind || 7zfind " (x86)" || 7zdli || return 1
 	[[ -z $SEVEN_ZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
 	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
 		local BINPATH=$(which ln | sed -e "s/\/ln//")
-		checkdir "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH"
+		checkdir "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH" || error "creating 7z symbolic link"
+		return 0
 	else
 		USE_7Z_PATH=true
+		return 0
+	fi
+}
+
+7zfind() {
+	checkdir "${ROOT_PATH}/Program Files${1}" || error "validating folder :: ${ROOT_PATH}/Program Files$1"
+	local FIND=$(find "${ROOT_PATH}/Program Files${1}" -maxdepth 2 -type f -name "7z.exe" -print)
+	for i in "$FIND"; do
+		[[ -x "${i}" ]] && { SEVEN_ZIP="${i}"; return 0; }
+	done
+	return 1
+}
+
+7zdli () {
+	if ask "Download 7-Zip v9.22 x86_64 msi package?"; then
+		wget -N "$SZIP_DOWNLOAD_URI" || error "downloading 7-Zip msi package :: $SZIP_DOWNLOAD_URI"
+		[[ -e "$MSIEXEC_PATH" ]] || error "msiexec.exe not found :: $MSIEXEC_PATH"
+		[[ -x "$MSIEXEC_PATH" ]] || error "msiexec not executable :: $MSIEXEC_PATH"
+		if ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2"; then
+			"${ROOT_PATH}/Windows/System32/msiexec.exe" /passive /norestart /i $(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi") || error "installing 7-Zip, or user cancelled"
+		else
+			cygstart -w "${ROOT_PATH}/Windows/System32/msiexec.exe" /norestart /i $(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi") || error "installing 7-Zip, or user cancelled"
+		fi
+		7zfind || 7zfind " (x86)"
+	else
+		error "User cancelled 7-Zip download"
+	fi
+}
+
+wgetdli() {
+	if hash apt-cyg 2>/dev/null; then
+		ask "apt-cyg found, use to install wget?" && apt-cyg install wget || error "installing wget using apt-cyg, try manuall install with CYGWIN setup.exe"
+		hash apt-cyg 2>/dev/null || error "something went wrong wget still not viable"
+		return 0
+	else
+		echo "Could not autoinstall wget, please use CYGWIN setup.exe to install"
+		return 1
 	fi
 }
 
@@ -155,14 +190,18 @@ OS_VERSION=$(uname -s)
 ARCH_TYPE=$(uname -m)
 [[ "$ARCH_TYPE" == x86_64 ]] || error "Unsupported architecture :: $(uname -m)"
 
+# set default download path
+FALLBACK_DOWNLOAD_PATH="${ROOT_PATH}/Users/${WIN_USER}/Downloads"
+checkdir "$DOWNLOAD_PATH" || DOWNLOAD_PATH="$FALLBACK_DOWNLOAD_PATH"
+checkdir "$DOWNLOAD_PATH" || error "Path not found $DOWNLOAD_PATH"
+
 # check binary dependencies
 for i in "${DEPS[@]}"; do
-	#7zip check|find and create symlink
-	if [[ $i == '7z' ]]; then
-		hash $i 2>/dev/null || 7zip
-	else
-		hash $i 2>/dev/null || error "Dependency not found :: $i"
-	fi
+	case "$i" in
+		7z) hash $i 2>/dev/null || 7zip || error "Dependency not found :: $i"	;;
+		wget) hash wget 2>/dev/null || wgetdli || error "Dependency not found :: $i"	;;
+		*) hash $i 2>/dev/null || error "Dependency not found :: $i"	;;
+	esac
 done
 
 # set usernames
@@ -170,11 +209,6 @@ CYG_USER=$(echo "${HOME}" | cut -d '/' -f3)
 [[ -n "$CYG_USER" ]] || error "retrieving cygwin session username"
 WIN_USER=$(wmic computersystem get username | sed -n 2p | awk '{print $1}' | cut -d '\' -f2)
 [[ -n "$WIN_USER" ]] || error "retrieving Windows session username"
-
-# set default download path
-FALLBACK_DOWNLOAD_PATH="${ROOT_PATH}/Users/${WIN_USER}/Downloads"
-checkdir "$DOWNLOAD_PATH" || DOWNLOAD_PATH="$FALLBACK_DOWNLOAD_PATH"
-checkdir "$DOWNLOAD_PATH" || error "Path not found $DOWNLOAD_PATH"
 
 # set geforce-driver-check script path
 checkfile "${BASH_SOURCE}" || error "establishing script source path"
