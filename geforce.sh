@@ -311,8 +311,6 @@ for i in "${DEPS[@]}"; do
 	esac
 done
 
- "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
-
 dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
 is-notebook && NOTEBOOK=true
 get-online-data || error "in online data query :: $FILE_DATA"
