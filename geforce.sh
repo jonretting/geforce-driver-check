@@ -53,12 +53,12 @@ DEBUG=false
 FILE_DATA=
 FILE_NAME=
 LATEST_VER=
-CURRENT_VER=
+INSTALLED_VER=
 DOWNLOAD_URI=
 SEVEN_ZIP=
 EXTRACT_SUB_PATH=
 LATEST_VER_NAME=
-CURRENT_VER_NAME=
+INSTALLED_VER_NAME=
 GDC_PATH=
 CYG_USER=
 WIN_USER=
@@ -91,20 +91,20 @@ ask() {
 	done
 }
 
-checkdir() {
+check-dir() {
 	[[ -d "$1" ]] && [[ -r "$1" ]] && return 0 || return 1
 }
 
-checkfile() {
+check-file() {
 	[[ -e "$1" ]] && [[ -r "$1" ]] && return 0 || return 1
 }
 
 7zip() {
-	7zfind || 7zfind " (x86)" || 7zdli || return 1
+	7z-find || 7z-find " (x86)" || 7z-dli || return 1
 	[[ -z $SEVEN_ZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
 	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
 		local BINPATH=$(which ln | sed -e "s/\/ln//")
-		checkdir "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH" || error "creating 7z symbolic link"
+		check-dir "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH" || error "creating 7z symbolic link"
 		return 0
 	else
 		USE_7Z_PATH=true
@@ -112,8 +112,8 @@ checkfile() {
 	fi
 }
 
-7zfind() {
-	checkdir "${ROOT_PATH}/Program Files${1}" || error "validating folder :: ${ROOT_PATH}/Program Files$1"
+7z-find() {
+	check-dir "${ROOT_PATH}/Program Files${1}" || error "validating folder :: ${ROOT_PATH}/Program Files$1"
 	local FIND=$(find "${ROOT_PATH}/Program Files${1}" -maxdepth 2 -type f -name "7z.exe" -print)
 	for i in "$FIND"; do
 		[[ -x "${i}" ]] && { SEVEN_ZIP="${i}"; return 0; }
@@ -121,7 +121,7 @@ checkfile() {
 	return 1
 }
 
-7zdli () {
+7z-dli () {
 	if ask "Download 7-Zip v9.22 x86_64 msi package?"; then
 		wget -N "$SZIP_DOWNLOAD_URI" || error "downloading 7-Zip msi package :: $SZIP_DOWNLOAD_URI"
 		[[ -e "$MSIEXEC_PATH" ]] || error "msiexec.exe not found :: $MSIEXEC_PATH"
@@ -131,13 +131,13 @@ checkfile() {
 		else
 			cygstart -w "${ROOT_PATH}/Windows/System32/msiexec.exe" /norestart /i $(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi") || error "installing 7-Zip, or user cancelled"
 		fi
-		7zfind || 7zfind " (x86)"
+		7z-find || 7z-find " (x86)"
 	else
 		error "User cancelled 7-Zip download"
 	fi
 }
 
-wgetdli() {
+wget-dli() {
 	if hash apt-cyg 2>/dev/null; then
 		ask "apt-cyg found, use to install wget?" && apt-cyg install wget || error "installing wget using apt-cyg, try manuall install with CYGWIN setup.exe"
 		hash apt-cyg 2>/dev/null || error "something went wrong wget still not viable"
@@ -148,12 +148,46 @@ wgetdli() {
 	fi
 }
 
-devarchive() {
-	if checkfile "${GDC_PATH}/devices_notebook.txt.gz"; then
+dev-archive() {
+	if check-file "${GDC_PATH}/devices_notebook.txt.gz"; then
 		gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || error "gzip decompress devices_notebook.txt.gz"
-		checkfile "${GDC_PATH}/devices_notebook.txt" || error "cannot read or missing :: ${GDC_PATH}/devices_notebook.txt"
+		check-file "${GDC_PATH}/devices_notebook.txt" || error "cannot read or missing :: ${GDC_PATH}/devices_notebook.txt"
 		return 0
 	fi
+}
+
+get-online-data() {
+	$NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
+	FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
+	[[ $FILE_DATA == *.exe ]] || error "Unexpected FILE_DATA returned :: $FILE_DATA"
+	return 0
+}
+
+get-latest-name() {
+	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
+	[[ $FILE_NAME == *.exe ]] || error "Unexpected FILE_NAME returned :: $FILE_NAME"
+	return 0
+}
+
+get-latest-ver() {
+	LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
+	[[ $LATEST_VER =~ ^[0-9]+$ ]] || error "LATEST_VER not a number :: $LATEST_VER"
+	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
+	return 0
+}
+
+get-installed-ver() {
+	INSTALLED_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
+	[[ $INSTALLED_VER =~ ^[0-9]+$ ]] || error "INSTALLED_VER not a number :: $INSTALLED_VER"
+	INSTALLED_VER_NAME=$(echo $INSTALLED_VER | sed "s/./.&/4")
+	return 0
+}
+
+is-notebook() {
+	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
+	dev-archive || error "in devices_notebook"
+	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && return 0
+	return 1
 }
 
 usage() {
@@ -201,14 +235,14 @@ ARCH_TYPE=$(uname -m)
 
 # set default download path
 FALLBACK_DOWNLOAD_PATH="${ROOT_PATH}/Users/${WIN_USER}/Downloads"
-checkdir "$DOWNLOAD_PATH" || DOWNLOAD_PATH="$FALLBACK_DOWNLOAD_PATH"
-checkdir "$DOWNLOAD_PATH" || error "Path not found $DOWNLOAD_PATH"
+check-dir "$DOWNLOAD_PATH" || DOWNLOAD_PATH="$FALLBACK_DOWNLOAD_PATH"
+check-dir "$DOWNLOAD_PATH" || error "Path not found $DOWNLOAD_PATH"
 
 # check binary dependencies
 for i in "${DEPS[@]}"; do
 	case "$i" in
 		7z) hash $i 2>/dev/null || 7zip || error "Dependency not found :: $i"	;;
-		wget) hash wget 2>/dev/null || wgetdli || error "Dependency not found :: $i"	;;
+		wget) hash wget 2>/dev/null || wget-dli || error "Dependency not found :: $i"	;;
 		*) hash $i 2>/dev/null || error "Dependency not found :: $i"	;;
 	esac
 done
@@ -220,51 +254,43 @@ WIN_USER=$(wmic computersystem get username | awk -F"\\" -v RS= '{print $3}')
 [[ -n "$WIN_USER" ]] || error "retrieving Windows session username"
 
 # set geforce-driver-check script path
-checkfile "${BASH_SOURCE}" || error "establishing script source path"
+check-file "${BASH_SOURCE}" || error "establishing script source path"
 GDC_PATH=$(dirname ${BASH_SOURCE})
-checkdir "$GDC_PATH" || error "establishing script source path"
+check-dir "$GDC_PATH" || error "establishing script source path"
 
 # check for notebook adapater
-VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-devarchive || error "in devices_notebook"
-[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
+is-notebook && NOTEBOOK=true
 
-# online file data query
-$NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
-FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
-[[ $FILE_DATA == *.exe ]] || error "Unexpected FILE_DATA returned :: $FILE_DATA"
+# driver data query online
+get-online-data || error "in online data query getonlinedata()"
 
-# get file name only
-FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
-[[ $FILE_NAME == *.exe ]] || error "Unexpected FILE_NAME returned :: $FILE_NAME"
-# get latest version
-LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
-[[ $LATEST_VER =~ ^[0-9]+$ ]] || error "LATEST_VER not a number :: $LATEST_VER"
-LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
+# get meta data name
+get-latest-name || error "in parsing onlinedata"
+
+# get meta data version
+get-latest-ver || error "in parsing onlinedata"
 
 # get current version
-CURRENT_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
-[[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
-CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
+get-installed-ver || error "error in retrieving local driver version data"
 
 # store full dl uri
 DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 $INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
 
 # check versions
-$DEBUG && CURRENT_VER="33090"
-if [[ $CURRENT_VER -ge $LATEST_VER ]]; then
+$DEBUG && INSTALLED_VER="33090"
+if [[ $INSTALLED_VER -ge $LATEST_VER ]]; then
 	# make notification nicer
-	$CHECK_ONLY && { echo "Already latest version: $CURRENT_VER_NAME"; exit 1; }
-	echo "Already latest version: $CURRENT_VER_NAME"
+	$CHECK_ONLY && { echo "Already latest version: $INSTALLED_VER_NAME"; exit 1; }
+	echo "Already latest version: $INSTALLED_VER_NAME"
 	exit 0
 fi
 
 # make  notification nicer
-$CHECK_ONLY && { echo -e "New version available!\nCurrent: ${CURRENT_VER_NAME}\nLatest:  ${LATEST_VER_NAME}"; exit 1; }
+$CHECK_ONLY && { echo -e "New version available!\nCurrent: ${INSTALLED_VER_NAME}\nLatest:  ${LATEST_VER_NAME}"; exit 1; }
 
 # run tasks
-echo -e "New version available!\nCurrent: $CURRENT_VER_NAME\nLatest:  $LATEST_VER_NAME"
+echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
 
 # ask to download and install (continue)
 ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?" || { echo "User cancelled"; exit 0; }
@@ -274,10 +300,10 @@ cd "$DOWNLOAD_PATH" || error "cd to download path :: $DOWNLOAD_PATH"
 wget -N "$DOWNLOAD_URI" || error "wget downloading file :: $DOWNLOAD_URI"
 
 # unarchive new version download
-checkdir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
+check-dir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
 EXTRACT_SUB_PATH="${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
 echo -ne "Extracting new driver archive..."
-checkdir "$EXTRACT_SUB_PATH" && rm -rf "$EXTRACT_SUB_PATH"
+check-dir "$EXTRACT_SUB_PATH" && rm -rf "$EXTRACT_SUB_PATH"
 7z x "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wa "${EXTRACT_SUB_PATH}")" $EXCLUDE_PKGS >/dev/null || error "extracting new driver archive"
 echo "Done"
 
@@ -297,8 +323,8 @@ fi
 echo "Done"
 
 # final check verify new version
-CURRENT_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
-[[ $CURRENT_VER -eq $LATEST_VER ]] || error "After all that your driver version didn't change!"
+INSTALLED_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
+[[ $INSTALLED_VER -eq $LATEST_VER ]] || error "After all that your driver version didn't change!"
 echo "Driver update successfull!"
 
 exit 0
