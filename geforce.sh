@@ -248,6 +248,20 @@ LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 # local driver data query
 LOCAL_DRIVER_DATA=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/')
 
+# remove unused oem*.inf packages and set CURRENT_OEM_INF
+REM_OEMS=$(echo $LOCAL_DRIVER_DATA | grep -Eo 'oem[0-9]+\.inf')
+if [[ "${#REM_OEMS[@]}" -gt 1 ]]; then
+	for REOEM in "${REM_OEMS[@]}"; do
+		[[ "$REOEM" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in REOEMS array :: $REOEM"
+		PnPutil -d $REOEM >/dev/null || CURRENT_OEM_INF="$REOEM"
+	done
+elif [[ "${#REM_OEMS[@]}" -eq 1 ]]; then
+	CURRENT_OEM_INF="$REM_OEMS"
+	[[ "$CURRENT_OEM_INF" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in CURRENT_OEM_INF array :: $CURRENT_OEM_INF"
+else
+	error "Could not get proper CURRENT_OEM_INF value"
+fi
+
 # get current version
 CURRENT_VER=$(echo $LOCAL_DRIVER_DATA | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
 [[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
@@ -278,20 +292,6 @@ ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?" || 
 echo -e "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
 cd "$DOWNLOAD_PATH" || error "cd to download path :: $DOWNLOAD_PATH"
 wget -N "$DOWNLOAD_URI" || error "wget downloading file :: $DOWNLOAD_URI"
-
-# remove unused oem*.inf packages and set CURRENT_OEM_INF
-REM_OEMS=$(echo $LOCAL_DRIVER_DATA | grep -Eo 'oem[0-9]+\.inf')
-if [[ "${#REM_OEMS[@]}" -gt 1 ]]; then
-	for REOEM in "${REM_OEMS[@]}"; do
-		[[ "$REOEM" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in REOEMS array :: $REOEM"
-		PnPutil -d $REOEM >/dev/null || CURRENT_OEM_INF="$REOEM"
-	done
-elif [[ "${#REM_OEMS[@]}" -eq 1 ]]; then
-	CURRENT_OEM_INF="$REM_OEMS"
-	[[ "$CURRENT_OEM_INF" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in CURRENT_OEM_INF array :: $CURRENT_OEM_INF"
-else
-	error "Could not get proper CURRENT_OEM_INF value"
-fi
 
 # unarchive new version download
 checkdir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
