@@ -53,6 +53,7 @@ ATTENDED=false
 CLEAN_INSTALL=false
 ENABLE_REBOOT_PROMPT=false
 DEBUG=false
+UPDATE=false
 
 # clear default vars (do not edit)
 FILE_DATA=
@@ -64,6 +65,7 @@ SEVEN_ZIP=
 LATEST_VER_NAME=
 INSTALLED_VER_NAME=
 DOWNLOAD_URI=
+
 
 # binary dependency array
 DEPS=('wget' '7z')
@@ -101,6 +103,11 @@ check-path() {
 
 check-file() {
 	[[ -e "$1" ]] && [[ -r "$1" ]] || return 1
+	return 0
+}
+
+check-mkdir () {
+	check-path "$1" || mkdir || return 1
 	return 0
 }
 
@@ -220,6 +227,30 @@ create-driver-uri() {
 	return 0
 }
 
+check-versions() {
+	$DEBUG && INSTALLED_VER="33090"
+	[[ $INSTALLED_VER -ge $LATEST_VER ]] && return 1
+	return 0
+}
+
+update-txt() {
+	$1 || echo -e "Already latest version: $INSTALLED_VER_NAME"
+	$1 && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
+	return 0
+}
+
+ask-prompt-setup() {
+	ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?" || {
+		echo "User cancelled"; return 1; }
+	return 0
+}
+
+download-driver() {
+	echo -e "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
+	wget -N -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI" || return 1
+	return 0
+}
+
 usage() {
 	echo "Geforce Driver Check
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
@@ -280,51 +311,23 @@ for i in "${DEPS[@]}"; do
 	esac
 done
 
-# gzip notebook devices txt
+ "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
+
 dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
-
-# check for notebook adapater
 is-notebook && NOTEBOOK=true
-
-# driver data query online
 get-online-data || error "in online data query :: $FILE_DATA"
-
-# get meta data name
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
-
-# get meta data version
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
-
-# get current version
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
-
-# create full driver dl uri
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
+check-versions && UPDATE=true
+$UPDATE || update-txt false
+$UPDATE && update-txt true
+$UPDATE && $CHECK_ONLY && exit 1
+$UPDATE && ask-prompt-setup || exit 1
+download-driver || error "wget downloading file :: $DOWNLOAD_URI"
+check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 
-# check versions
-$DEBUG && INSTALLED_VER="33090"
-if [[ $INSTALLED_VER -ge $LATEST_VER ]]; then
-	# make notification nicer
-	$CHECK_ONLY && { echo "Already latest version: $INSTALLED_VER_NAME"; exit 1; }
-	echo "Already latest version: $INSTALLED_VER_NAME"
-	exit 0
-fi
-
-# make  notification nicer
-$CHECK_ONLY && { echo -e "New version available!\nCurrent: ${INSTALLED_VER_NAME}\nLatest:  ${LATEST_VER_NAME}"; exit 1; }
-
-# run tasks
-echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
-
-# ask to download and install (continue)
-ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?" || { echo "User cancelled"; exit 0; }
-
-echo -e "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
-cd "$DOWNLOAD_PATH" || error "cd to download path :: $DOWNLOAD_PATH"
-wget -N "$DOWNLOAD_URI" || error "wget downloading file :: $DOWNLOAD_URI"
-
-# unarchive new version download
-check-path "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
 echo -ne "Extracting new driver archive..."
 check-path "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}" && rm -rf "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
 7z x "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wa "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}")" $EXCLUDE_PKGS >/dev/null || error "extracting new driver archive"
