@@ -16,7 +16,6 @@ INFO:
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
 - If 7zip is not found, GDC will prompt to download x64 msi, then prompt to attended or unattended install
-- If wget is not found, GDC will look for apt-cyg and prompt to autoinstall
 - Supports the international driver package version when "-i" is envoked
 - Only installs Display Driver, HD Audio, and PshyX
 - Prompts to install after downloading (no prompt, no progress when "-s" is envoked
