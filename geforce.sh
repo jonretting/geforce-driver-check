@@ -53,8 +53,6 @@ DEBUG=false
 FILE_DATA=
 FILE_NAME=
 LATEST_VER=
-REM_OEMS=
-CURRENT_OEM_INF=
 CURRENT_VER=
 DOWNLOAD_URI=
 SEVEN_ZIP=
@@ -68,7 +66,6 @@ FALLBACK_DOWNLOAD_PATH=
 DOWNLOAD_URI=
 OS_VERSION=
 ARCH_TYPE=
-LOCAL_DRIVER_DATA=
 
 # binary dependency array
 DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
@@ -245,25 +242,8 @@ LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 [[ $LATEST_VER =~ ^[0-9]+$ ]] || error "LATEST_VER not a number :: $LATEST_VER"
 LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 
-# local driver data query
-LOCAL_DRIVER_DATA=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/')
-
-# remove unused oem*.inf packages and set CURRENT_OEM_INF
-REM_OEMS=$(echo $LOCAL_DRIVER_DATA | grep -Eo 'oem[0-9]+\.inf')
-if [[ "${#REM_OEMS[@]}" -gt 1 ]]; then
-	for REOEM in "${REM_OEMS[@]}"; do
-		[[ "$REOEM" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in REOEMS array :: $REOEM"
-		PnPutil -d $REOEM >/dev/null || CURRENT_OEM_INF="$REOEM"
-	done
-elif [[ "${#REM_OEMS[@]}" -eq 1 ]]; then
-	CURRENT_OEM_INF="$REM_OEMS"
-	[[ "$CURRENT_OEM_INF" =~ ^'oem'[0-9]{1,3}'.inf'$ ]] || error "Unexpected value in CURRENT_OEM_INF array :: $CURRENT_OEM_INF"
-else
-	error "Could not get proper CURRENT_OEM_INF value"
-fi
-
 # get current version
-CURRENT_VER=$(echo $LOCAL_DRIVER_DATA | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
+CURRENT_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
 [[ $CURRENT_VER =~ ^[0-9]+$ ]] || error "CURRENT_VER not a number :: $CURRENT_VER"
 CURRENT_VER_NAME=$(echo $CURRENT_VER | sed "s/./.&/4")
 
@@ -316,17 +296,8 @@ else
 fi
 echo "Done"
 
-# remove old oem inf package
-echo -ne "Removing old driver package..."
-if $DEBUG; then
-	echo "PnPutil -d $CURRENT_OEM_INF >/dev/null"
-else
-	PnPutil -d $CURRENT_OEM_INF >/dev/null || echo -e "Error Removing old oem*.inf package (maybe in use, system might require reboot)"
-fi
-echo "Done"
-
 # final check verify new version
-CURRENT_VER=$(PnPutil.exe -e | awk -v RS= -F: '/Display adapter/ && /NVIDIA/' | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
+CURRENT_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
 [[ $CURRENT_VER -eq $LATEST_VER ]] || error "After all that your driver version didn't change!"
 echo "Driver update successfull!"
 
