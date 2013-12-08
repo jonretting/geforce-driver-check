@@ -32,7 +32,7 @@ INFO:
 
 DEPENDENCIES:
 -------------
-wget, 7-Zip (prompts to install if not found), cygpath, wmic (part of windows), PnPutil (part of windows)
+wget, 7-Zip (prompts to install if not found), cygpath
 
 CONFIGURE:
 ----------
