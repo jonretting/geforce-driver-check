@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.041"
+VERSION="1.0431"
 
 # cutomizable defaults
 DOWNLOAD_PATH=$(cygpath "${HOMEDRIVE}${HOMEPATH}/Downloads") # download driver file into this path use UNIX path
@@ -43,6 +43,7 @@ CYG_USER=$(whoami)
 WIN_USER="$USERNAME"
 OS_VERSION=$(uname -s)
 ARCH_TYPE=$(uname -m)
+DEPS=('wget' '7z') # deps array
 
 # default flags (change if you know what you are doing)
 SILENT=false
@@ -65,123 +66,111 @@ SEVEN_ZIP=
 LATEST_VER_NAME=
 INSTALLED_VER_NAME=
 DOWNLOAD_URI=
-DEPS=('wget' '7z') # binary dependency array
 
 # begin functions
-error() { 
-	echo -e "Error: $1" | tee -a /var/log/messages
-	exit 1
-}
-ask() {
-	while true; do
-		if $YES_TO_ALL; then 
-			local REPLY=Y; local default=Y
-		elif [[ "$2" ]]; then
-			local prompt="$2"; local default=
-		else
-			local prompt="y/n"; local default=
-		fi
-		if [[ -z $default ]]; then
-			echo -ne "$1 "; read -p "[$prompt] " REPLY; [[ -z "$REPLY" ]] && local REPLY=$default
-		fi
-		case "$REPLY" in
-			Y*|y*) return 0 ;; N*|n*) return 1 ;;
-			1*) return 0 ;; 2*) return 1 ;;
-		esac
+ask(){
+	while true;do
+		[ "$2" ] && { local pmt="$2";local def=; }; [ "$2" ] || { local pmt="y/n";local def=; }
+		$YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
+		[ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
 	done
 }
-check-hash() {
+error(){
+	echo -e "Error: geforce.sh : $1" | tee -a /var/log/messages
+	exit 1
+}
+check-hash(){
 	hash "$1" 2>/dev/null || return 1
 	return 0
 }
-check-path() {
+check-path(){
 	[[ -d "$1" ]] && [[ -r "$1" ]] || return 1 
 	return 0
 }
-check-file() {
+check-file(){
 	[[ -e "$1" ]] && [[ -r "$1" ]] || return 1
 	return 0
 }
-check-mkdir () {
+check-mkdir (){
 	check-path "$1" || mkdir || return 1
 	return 0
 }
-check-os-ver() {
+check-os-ver(){
 	[[ "$OS_VERSION" == CYGWIN_NT-6* ]] || return 1
 	return 0
 }
-check-arch-type() {
+check-arch-type(){
 	[[ "$ARCH_TYPE" == "x86_64" ]] || return 1
 	return 0
 }
-check-usernames() {
+check-usernames(){
 	[[ -n "$CYG_USER" && -n "$WIN_USER" ]] || return 1
 	return 0
 }
-dev-archive() {
+dev-archive(){
 	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
 	check-file "${GDC_PATH}/devices_notebook.txt" || return 1
 	return 0
 }
-get-online-data() {
+get-online-data(){
 	$NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
 	FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
 	[[ $FILE_DATA == *.exe ]] || return 1
 	return 0
 }
-get-latest-name() {
+get-latest-name(){
 	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
 	[[ $FILE_NAME == *.exe ]] || return 1
 	return 0
 }
-get-latest-ver() {
+get-latest-ver(){
 	LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 	[[ $LATEST_VER =~ ^[0-9]+$ ]] || return 1
 	return 0
 }
-get-installed-ver() {
+get-installed-ver(){
 	INSTALLED_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
 	INSTALLED_VER_NAME=$(echo $INSTALLED_VER | sed "s/./.&/4")
 	[[ $INSTALLED_VER =~ ^[0-9]+$ ]] || return 1
 	return 0
 }
-is-notebook() {
+is-notebook(){
 	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
 	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" || return 1
 	return 0
 }
-check-uri() {
+check-uri(){
 	wget -t 1 -T 3 -q --spider "$1" || return 1
 	return 0
 }
-create-driver-uri() {
+create-driver-uri(){
 	DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 	$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
 	check-uri "$DOWNLOAD_URI" || return 1
 	return 0
 }
-check-versions() {
+check-versions(){
 	$DEBUG && INSTALLED_VER="33090"
 	[[ $INSTALLED_VER -ge $LATEST_VER ]] && return 1
 	return 0
 }
-update-txt() {
+update-txt(){
 	$1 || echo -e "Already latest version: $INSTALLED_VER_NAME"
 	$1 && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
 	return 0
 }
-ask-prompt-setup() {
+ask-prompt-setup(){
 	ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?" || {
 		echo "User cancelled"; return 1; }
 	return 0
 }
-download-driver() {
+download-driver(){
 	echo -e "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
 	wget -N -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI" || return 1
 	return 0
 }
-extract-package() {
+extract-package(){
 	echo -ne "Extracting new driver archive..."
 	SOURCE_ARCHIVE="${DOWNLOAD_PATH}/${FILE_NAME}"
 	EXTRACT_PATH="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
@@ -189,21 +178,21 @@ extract-package() {
 	echo "Done"
 	return 0
 }
-compile-setup-opts() {
+compile-setup-opts(){
 	$SILENT && SETUP_ARGS+=" -s"
 	$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
 	$ATTENDED && SETUP_ARGS=
 	$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
 	return 0
 }
-run-installer() {
+run-installer(){
 	echo -ne "Executing installer setup..."
 	$DEBUG || cygstart -w "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" || return 1
 	echo "Done"
 	return 0
 }
 # dependency resolution functions
-7zip() {
+7zip(){
 	7z-find || 7z-find " (x86)" || 7z-dli || return 1
 	[[ -z $SEVEN_ZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
 	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
@@ -215,7 +204,7 @@ run-installer() {
 		return 0
 	fi
 }
-7z-find() {
+7z-find(){
 	check-path "${ROOT_PATH}/Program Files${1}" || return 1
 	local FIND=$(find "${ROOT_PATH}/Program Files${1}" -maxdepth 2 -type f -name "7z.exe" -print)
 	for i in "$FIND"; do
@@ -223,10 +212,9 @@ run-installer() {
 	done
 	return 1
 }
-7z-dli () {
+7z-dli (){
 	if ask "Download 7-Zip v9.22 x86_64 msi package?"; then
-		wget -N "$SZIP_DOWNLOAD_URI" || error "downloading 7-Zip msi package :: $SZIP_DOWNLOAD_URI"
-		[[ -e "$MSIEXEC_PATH" ]] || error "msiexec.exe not found :: $MSIEXEC_PATH"
+		wget -N -P "$DOWNLOAD_PATH" "$SZIP_DOWNLOAD_URI"
 		[[ -x "$MSIEXEC_PATH" ]] || error "msiexec not executable :: $MSIEXEC_PATH"
 		if ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2"; then
 			"${ROOT_PATH}/Windows/System32/msiexec.exe" /passive /norestart /i $(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi") || error "installing 7-Zip, or user cancelled"
@@ -238,17 +226,7 @@ run-installer() {
 		error "User cancelled 7-Zip download"
 	fi
 }
-wget-dli() {
-	if check-hash apt-cyg; then
-		ask "apt-cyg found, use to install wget?" && apt-cyg install wget || error "installing wget using apt-cyg, try manuall install with CYGWIN setup.exe"
-		check-hash apt-cyg || error "something went wrong wget still not viable"
-		return 0
-	else
-		echo "Could not autoinstall wget, please use CYGWIN setup.exe to install"
-		return 1
-	fi
-}
-usage() {
+usage(){
 	echo "Geforce Driver Check
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
 Usage: geforce.sh [-s] [-y]
@@ -290,15 +268,11 @@ check-usernames || error "validating session usernames :: $WIN_USER / $CYG_USER"
 check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
 check-path "$DOWNLOAD_PATH" || error "validating download path :: $DOWNLOAD_PATH"
 check-path "$GDC_PATH" || error "validating script source path :: $GDC_PATH"
-# check binary dependencies
+# check dependencies and foo
 for i in "${DEPS[@]}"; do
 	case "$i" in
-		7z)	check-hash 7z || 7zip || error "Dependency not found :: $i"	
-		   ;;
-	  wget)	check-hash wget || wget-dli || error "Dependency not found :: $i"
-		   ;;
-		 *)	check-hash "$i" || error "Dependency not found :: $i"
-		   ;;
+		7z)	check-hash 7z || 7zip || error "Dependency not found :: $i"	;;
+		 *)	check-hash "$i" || error "Dependency not found :: $i"	;;
 	esac
 done
 dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
