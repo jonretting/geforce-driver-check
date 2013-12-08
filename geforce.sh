@@ -23,21 +23,26 @@
 VERSION="1.041"
 
 # cutomizable defaults
-DOWNLOAD_PATH="/cygdrive/e/Downloads" #download driver file into this path
+DOWNLOAD_PATH=$(cygpath "${HOMEDRIVE}${HOMEPATH}/Downloads") #download driver file into this path
 DOWNLOAD_MIRROR="http://us.download.nvidia.com" #use this download mirror
-ROOT_PATH="/cygdrive/c" #$(cygpath -W | sed -e "s/\/Windows//") # auto determines root path via cygpath
-INTERNATIONAL=false		# true = use international driver package version multi language support
-NOTEBOOK=false			# true = use notebook driver version, skip check adapter type
+INTERNATIONAL=false		# true use international driver package version multi language support
+NOTEBOOK=false			# true use notebook driver version, skip check adapter type
 
 # default vars
-LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us"
-DESKTOP_ID="&psid=95"
-NOTEBOOK_ID="&psid=92"
+ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
+MSIEXEC_PATH="${ROOT_PATH}/Windows/msiexec"
+CWD="$PWD"
+LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
+DESKTOP_ID="95"
+NOTEBOOK_ID="92"
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 SETUP_ARGS="-nofinish -passive -nosplash -noeula"
-CWD="$PWD"
 SZIP_DOWNLOAD_URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
-MSIEXEC_PATH="${ROOT_PATH}/Windows/System32/msiexec.exe"
+GDC_PATH=$(dirname ${BASH_SOURCE})
+CYG_USER=$(whoami)
+WIN_USER="$USERNAME"
+OS_VERSION=$(uname -s)
+ARCH_TYPE=$(uname -m)
 
 # default flags (change if you know what you are doing)
 SILENT=false
@@ -56,19 +61,12 @@ LATEST_VER=
 INSTALLED_VER=
 DOWNLOAD_URI=
 SEVEN_ZIP=
-EXTRACT_SUB_PATH=
 LATEST_VER_NAME=
 INSTALLED_VER_NAME=
-GDC_PATH=
-CYG_USER=
-WIN_USER=
-FALLBACK_DOWNLOAD_PATH=
 DOWNLOAD_URI=
-OS_VERSION=
-ARCH_TYPE=
 
 # binary dependency array
-DEPS=('PnPutil' 'wget' '7z' 'cygpath' 'wmic')
+DEPS=('wget' '7z')
 
 error() { echo -e "Error: $1"; exit 1; }
 
@@ -91,12 +89,19 @@ ask() {
 	done
 }
 
-check-dir() {
-	[[ -d "$1" ]] && [[ -r "$1" ]] && return 0 || return 1
+check-hash() {
+	hash "$1" 2>/dev/null || return 1
+	return 0
+}
+
+check-path() {
+	[[ -d "$1" ]] && [[ -r "$1" ]] || return 1 
+	return 0
 }
 
 check-file() {
-	[[ -e "$1" ]] && [[ -r "$1" ]] && return 0 || return 1
+	[[ -e "$1" ]] && [[ -r "$1" ]] || return 1
+	return 0
 }
 
 7zip() {
@@ -104,16 +109,17 @@ check-file() {
 	[[ -z $SEVEN_ZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
 	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
 		local BINPATH=$(which ln | sed -e "s/\/ln//")
-		check-dir "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH" || error "creating 7z symbolic link"
+		check-path "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH" || error "creating 7z symbolic link"
 		return 0
 	else
 		USE_7Z_PATH=true
 		return 0
 	fi
 }
+# error "validating folder :: ${ROOT_PATH}/Program Files$1"
 
 7z-find() {
-	check-dir "${ROOT_PATH}/Program Files${1}" || error "validating folder :: ${ROOT_PATH}/Program Files$1"
+	check-path "${ROOT_PATH}/Program Files${1}" || return 1
 	local FIND=$(find "${ROOT_PATH}/Program Files${1}" -maxdepth 2 -type f -name "7z.exe" -print)
 	for i in "$FIND"; do
 		[[ -x "${i}" ]] && { SEVEN_ZIP="${i}"; return 0; }
@@ -148,46 +154,70 @@ wget-dli() {
 	fi
 }
 
+check-os-ver() {
+	[[ "$OS_VERSION" == CYGWIN_NT-6* ]] || return 1
+	return 0
+}
+
+check-arch-type() {
+	[[ "$ARCH_TYPE" == "x86_64" ]] || return 1
+	return 0
+}
+
+check-usernames() {
+	[[ -n "$CYG_USER" && -n "$WIN_USER" ]] || return 1
+	return 0
+}
+
 dev-archive() {
-	if check-file "${GDC_PATH}/devices_notebook.txt.gz"; then
-		gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || error "gzip decompress devices_notebook.txt.gz"
-		check-file "${GDC_PATH}/devices_notebook.txt" || error "cannot read or missing :: ${GDC_PATH}/devices_notebook.txt"
-		return 0
-	fi
+	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
+	check-file "${GDC_PATH}/devices_notebook.txt" || return 1
+	return 0
 }
 
 get-online-data() {
 	$NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
 	FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
-	[[ $FILE_DATA == *.exe ]] || error "Unexpected FILE_DATA returned :: $FILE_DATA"
+	[[ $FILE_DATA == *.exe ]] || return 1
 	return 0
 }
 
 get-latest-name() {
 	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
-	[[ $FILE_NAME == *.exe ]] || error "Unexpected FILE_NAME returned :: $FILE_NAME"
+	[[ $FILE_NAME == *.exe ]] || return 1
 	return 0
 }
 
 get-latest-ver() {
 	LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
-	[[ $LATEST_VER =~ ^[0-9]+$ ]] || error "LATEST_VER not a number :: $LATEST_VER"
 	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
+	[[ $LATEST_VER =~ ^[0-9]+$ ]] || return 1
 	return 0
 }
 
 get-installed-ver() {
 	INSTALLED_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
-	[[ $INSTALLED_VER =~ ^[0-9]+$ ]] || error "INSTALLED_VER not a number :: $INSTALLED_VER"
 	INSTALLED_VER_NAME=$(echo $INSTALLED_VER | sed "s/./.&/4")
+	[[ $INSTALLED_VER =~ ^[0-9]+$ ]] || return 1
 	return 0
 }
 
 is-notebook() {
 	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-	dev-archive || error "in devices_notebook"
-	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && return 0
-	return 1
+	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" || return 1
+	return 0
+}
+
+check-uri() {
+	wget -t 1 -T 3 -q --spider "$1" || return 1
+	return 0
+}
+
+create-driver-uri() {
+	DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
+	$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
+	check-uri "$DOWNLOAD_URI" || return 1
+	return 0
 }
 
 usage() {
@@ -207,6 +237,7 @@ Example: geforce.sh
 -V    Displays version info
 -h    this crupt
 Version: ${VERSION}"
+	return 0
 }
 
 while getopts asyd:cVCAirh OPTIONS; do
@@ -227,55 +258,48 @@ while getopts asyd:cVCAirh OPTIONS; do
 done
 shift $(($OPTIND - 1))
 
-# check os and architecture
-OS_VERSION=$(uname -s)
-[[ "$OS_VERSION" == CYGWIN_NT-6* ]] || error "Unsupported OS Version :: $(uname -s)"
-ARCH_TYPE=$(uname -m)
-[[ "$ARCH_TYPE" == x86_64 ]] || error "Unsupported architecture :: $(uname -m)"
-
-# set default download path
-FALLBACK_DOWNLOAD_PATH="${ROOT_PATH}/Users/${WIN_USER}/Downloads"
-check-dir "$DOWNLOAD_PATH" || DOWNLOAD_PATH="$FALLBACK_DOWNLOAD_PATH"
-check-dir "$DOWNLOAD_PATH" || error "Path not found $DOWNLOAD_PATH"
+check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
+check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
+check-usernames || error "validating session usernames :: $WIN_USER / $CYG_USER"
+check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
+check-path "$DOWNLOAD_PATH" || error "validating download path :: $DOWNLOAD_PATH"
+check-path "$GDC_PATH" || error "validating script source path :: $GDC_PATH"
 
 # check binary dependencies
 for i in "${DEPS[@]}"; do
 	case "$i" in
-		7z) hash $i 2>/dev/null || 7zip || error "Dependency not found :: $i"	;;
-		wget) hash wget 2>/dev/null || wget-dli || error "Dependency not found :: $i"	;;
-		*) hash $i 2>/dev/null || error "Dependency not found :: $i"	;;
+		7z) 
+			check-hash 7z || 7zip || error "Dependency not found :: $i"	
+		;;
+		wget)
+			check-hash wget || wget-dli || error "Dependency not found :: $i"
+		;;
+		*)
+			check-hash "$i" || error "Dependency not found :: $i"
+		;;
 	esac
 done
 
-# set usernames
-CYG_USER=$(echo "${HOME}" | cut -d '/' -f3)
-[[ -n "$CYG_USER" ]] || error "retrieving cygwin session username"
-WIN_USER=$(wmic computersystem get username | awk -F"\\" -v RS= '{print $3}')
-[[ -n "$WIN_USER" ]] || error "retrieving Windows session username"
-
-# set geforce-driver-check script path
-check-file "${BASH_SOURCE}" || error "establishing script source path"
-GDC_PATH=$(dirname ${BASH_SOURCE})
-check-dir "$GDC_PATH" || error "establishing script source path"
+# gzip notebook devices txt
+dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
 
 # check for notebook adapater
 is-notebook && NOTEBOOK=true
 
 # driver data query online
-get-online-data || error "in online data query getonlinedata()"
+get-online-data || error "in online data query :: $FILE_DATA"
 
 # get meta data name
-get-latest-name || error "in parsing onlinedata"
+get-latest-name || error "invalid file name returned :: $FILE_NAME"
 
 # get meta data version
-get-latest-ver || error "in parsing onlinedata"
+get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 
 # get current version
-get-installed-ver || error "error in retrieving local driver version data"
+get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 
-# store full dl uri
-DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
-$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
+# create full driver dl uri
+create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
 
 # check versions
 $DEBUG && INSTALLED_VER="33090"
@@ -300,11 +324,10 @@ cd "$DOWNLOAD_PATH" || error "cd to download path :: $DOWNLOAD_PATH"
 wget -N "$DOWNLOAD_URI" || error "wget downloading file :: $DOWNLOAD_URI"
 
 # unarchive new version download
-check-dir "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
-EXTRACT_SUB_PATH="${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
+check-path "${ROOT_PATH}/NVIDIA" || mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: \"$ROOT_PATH/NVIDIA\""
 echo -ne "Extracting new driver archive..."
-check-dir "$EXTRACT_SUB_PATH" && rm -rf "$EXTRACT_SUB_PATH"
-7z x "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wa "${EXTRACT_SUB_PATH}")" $EXCLUDE_PKGS >/dev/null || error "extracting new driver archive"
+check-path "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}" && rm -rf "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
+7z x "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wa "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}")" $EXCLUDE_PKGS >/dev/null || error "extracting new driver archive"
 echo "Done"
 
 # create setup.exe options args
@@ -316,9 +339,9 @@ $ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
 # run the installer with args
 echo -ne "Executing installer setup..."
 if $DEBUG; then
-	echo "cygstart -w $EXTRACT_SUB_PATH/setup.exe $SETUP_ARGS"
+	echo "cygstart -w ${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}/setup.exe $SETUP_ARGS"
 else
-	cygstart -w "$EXTRACT_SUB_PATH/setup.exe" "$SETUP_ARGS" || error "Installation failed or user interupted"
+	cygstart -w "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}/setup.exe" "$SETUP_ARGS" || error "Installation failed or user interupted"
 fi
 echo "Done"
 
