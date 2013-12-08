@@ -23,8 +23,9 @@
 VERSION="1.041"
 
 # cutomizable defaults
-DOWNLOAD_PATH=$(cygpath "${HOMEDRIVE}${HOMEPATH}/Downloads") #download driver file into this path
-DOWNLOAD_MIRROR="http://us.download.nvidia.com" #use this download mirror
+DOWNLOAD_PATH=$(cygpath "${HOMEDRIVE}${HOMEPATH}/Downloads") # download driver file into this path use UNIX path
+DOWNLOAD_MIRROR="http://us.download.nvidia.com" # use this download mirror
+EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
 INTERNATIONAL=false		# true use international driver package version multi language support
 NOTEBOOK=false			# true use notebook driver version, skip check adapter type
 
@@ -66,11 +67,13 @@ LATEST_VER_NAME=
 INSTALLED_VER_NAME=
 DOWNLOAD_URI=
 
-
 # binary dependency array
 DEPS=('wget' '7z')
 
-error() { echo -e "Error: $1"; exit 1; }
+error() { 
+	echo -e "Error: $1" | tee -a /var/log/messages
+	exit 1
+}
 
 ask() {
 	while true; do
@@ -253,10 +256,24 @@ download-driver() {
 
 extract-package() {
 	echo -ne "Extracting new driver archive..."
-	TIMECODE=$(date +%m%y%S)
-	SOURCE_ARCHIVE=$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")
-	EXTRACT_PATH=$(cygpath -wa "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}-${TIMECODE}")
-	7z x "$SOURCE_ARCHIVE" -o "$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null || return 1
+	SOURCE_ARCHIVE="${DOWNLOAD_PATH}/${FILE_NAME}"
+	EXTRACT_PATH="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
+	7z x $(cygpath -wa "$SOURCE_ARCHIVE") -o "$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null || return 1
+	echo "Done"
+	return 0
+}
+
+compile-setup-opts() {
+	$SILENT && SETUP_ARGS+=" -s"
+	$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
+	$ATTENDED && SETUP_ARGS=
+	$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
+	return 0
+}
+
+run-installer() {
+	echo -ne "Executing installer setup..."
+	$DEBUG || cygstart -w "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" || return 1
 	echo "Done"
 	return 0
 }
@@ -306,23 +323,18 @@ check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
 check-usernames || error "validating session usernames :: $WIN_USER / $CYG_USER"
 
 check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
-
 check-path "$DOWNLOAD_PATH" || error "validating download path :: $DOWNLOAD_PATH"
-
 check-path "$GDC_PATH" || error "validating script source path :: $GDC_PATH"
 
 # check binary dependencies
 for i in "${DEPS[@]}"; do
 	case "$i" in
-		7z) 
-			check-hash 7z || 7zip || error "Dependency not found :: $i"	
-		;;
-		wget)
-			check-hash wget || wget-dli || error "Dependency not found :: $i"
-		;;
-		*)
-			check-hash "$i" || error "Dependency not found :: $i"
-		;;
+		7z)	check-hash 7z || 7zip || error "Dependency not found :: $i"	
+		   ;;
+	  wget)	check-hash wget || wget-dli || error "Dependency not found :: $i"
+		   ;;
+		 *)	check-hash "$i" || error "Dependency not found :: $i"
+		   ;;
 	esac
 done
 
@@ -356,24 +368,14 @@ check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA
 
 extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
 
-# create setup.exe options args
-$SILENT && SETUP_ARGS+=" -s"
-$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
-$ATTENDED && SETUP_ARGS=
-$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
+compile-setup-opts || error "passing arg option issue"
 
-# run the installer with args
-echo -ne "Executing installer setup..."
-if $DEBUG; then
-	echo "cygstart -w ${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}/setup.exe $SETUP_ARGS"
-else
-	cygstart -w "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}/setup.exe" "$SETUP_ARGS" || error "Installation failed or user interupted"
-fi
-echo "Done"
+run-installer || error "Installation failed or user interupted"
 
-# final check verify new version
-INSTALLED_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
-[[ $INSTALLED_VER -eq $LATEST_VER ]] || error "After all that your driver version didn't change!"
+get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
+
+check-versions && error "After all that your driver version didn't change!"
+
 echo "Driver update successfull!"
 
 exit 0
