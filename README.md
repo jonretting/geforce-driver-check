@@ -23,8 +23,6 @@ INFO:
 - Will install automatically, no interaction needed
 - Displays Nvidia installation progress box
 - Runs driver setup with all driver packages when "-A" is envoked enables "-a" aswell
-- Removes all non-used Nvidia display driver oem inf packages
-- Removes old driver inf packages ex: oem7.inf
 - Script will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
 - You can check and see if a new version is available with "-C" won't download new driver, won't install
 - Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver#"
@@ -75,7 +73,7 @@ EXAMPLES:
 • Run completely silent answers "yes" to all prompts, doesn't display any Nvidia GUI (no driver install progress window)
 
 	./geforce.sh -s
-• Run without downloading new version or removing any unused display oem*.inf packages
+• Run and only see if you need an update and exit
 
 	./geforce.sh -C
 • Run with Download path specified, yes to all prompts, and silent driver install (no Nvidia GUI)
