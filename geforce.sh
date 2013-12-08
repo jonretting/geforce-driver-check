@@ -251,6 +251,16 @@ download-driver() {
 	return 0
 }
 
+extract-package() {
+	echo -ne "Extracting new driver archive..."
+	TIMECODE=$(date +%m%y%S)
+	SOURCE_ARCHIVE=$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")
+	EXTRACT_PATH=$(cygpath -wa "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}-${TIMECODE}")
+	7z x "$SOURCE_ARCHIVE" -o "$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null || return 1
+	echo "Done"
+	return 0
+}
+
 usage() {
 	echo "Geforce Driver Check
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
@@ -290,10 +300,15 @@ done
 shift $(($OPTIND - 1))
 
 check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
+
 check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
+
 check-usernames || error "validating session usernames :: $WIN_USER / $CYG_USER"
+
 check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
+
 check-path "$DOWNLOAD_PATH" || error "validating download path :: $DOWNLOAD_PATH"
+
 check-path "$GDC_PATH" || error "validating script source path :: $GDC_PATH"
 
 # check binary dependencies
@@ -312,24 +327,34 @@ for i in "${DEPS[@]}"; do
 done
 
 dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
+
 is-notebook && NOTEBOOK=true
+
 get-online-data || error "in online data query :: $FILE_DATA"
+
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
+
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
+
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
+
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
+
 check-versions && UPDATE=true
+
 $UPDATE || update-txt false
+
 $UPDATE && update-txt true
+
 $UPDATE && $CHECK_ONLY && exit 1
+
 $UPDATE && ask-prompt-setup || exit 1
+
 download-driver || error "wget downloading file :: $DOWNLOAD_URI"
+
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 
-echo -ne "Extracting new driver archive..."
-check-path "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}" && rm -rf "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}"
-7z x "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")" -o"$(cygpath -wa "${ROOT_PATH}/NVIDIA/GDC-${LATEST_VER_NAME}")" $EXCLUDE_PKGS >/dev/null || error "extracting new driver archive"
-echo "Done"
+extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
 
 # create setup.exe options args
 $SILENT && SETUP_ARGS+=" -s"
