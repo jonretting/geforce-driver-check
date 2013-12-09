@@ -19,24 +19,17 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.044"
+VERSION="1.045"
 
 # cutomizable defaults
 DOWNLOAD_PATH=$(cygpath "${HOMEDRIVE}${HOMEPATH}/Downloads") # download driver file into this path use UNIX path
-DOWNLOAD_MIRROR="http://us.download.nvidia.com" # use this download mirror
 EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
 INTERNATIONAL=false		# true use international driver package version multi language support
-NOTEBOOK=false			# true use notebook driver version, skip check adapter type
 
 # default vars
 ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
-CWD="$PWD"
-LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
-DESKTOP_ID="95"
-NOTEBOOK_ID="92"
-EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 GDC_PATH=$(dirname ${BASH_SOURCE})
-
+EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 
 # default flags (change if you know what you are doing)
 SILENT=false
@@ -45,17 +38,6 @@ CHECK_ONLY=false
 ATTENDED=false
 CLEAN_INSTALL=false
 ENABLE_REBOOT_PROMPT=false
-
-# clear default vars (do not edit)
-FILE_DATA=
-FILE_NAME=
-LATEST_VER=
-INSTALLED_VER=
-DOWNLOAD_URI=
-SEVEN_ZIP=
-LATEST_VER_NAME=
-INSTALLED_VER_NAME=
-DOWNLOAD_URI=
 
 # begin functions
 usage(){
@@ -75,7 +57,6 @@ Example: geforce.sh
 -V    Displays version info
 -h    this crupt
 Version: ${VERSION}"
-	return 0
 }
 ask(){
 	while true;do
@@ -83,7 +64,6 @@ ask(){
 		$YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
 		[ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
 	done
-	#return $?
 }
 error(){
 	echo -e "Error: geforce.sh : $1" | tee -a /var/log/messages
@@ -126,11 +106,17 @@ dev-archive(){
 	check-file "${GDC_PATH}/devices_notebook.txt"
 }
 get-online-data(){
-	$NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
+	FILE_DATA=
+	local DESKTOP_ID="95"
+	local NOTEBOOK_ID="92"
+	local LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
+	$NOTEBOOK && local LINK+="$NOTEBOOK_ID" || local LINK+="$DESKTOP_ID"
+	# needs refactor main web query
 	FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
 	[[ $FILE_DATA == *.exe ]]
 }
 get-latest-name(){
+	FILE_NAME=
 	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
 	[[ $FILE_NAME == *.exe ]]
 }
@@ -145,13 +131,15 @@ get-installed-ver(){
 	[[ $INSTALLED_VER =~ ^[0-9]+$ ]]
 }
 is-notebook(){
-	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
+	NOTEBOOK=false
+	local VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
 	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 }
 check-uri(){
 	wget -t 1 -T 3 -q --spider "$1"
 }
 create-driver-uri(){
+	local DOWNLOAD_MIRROR="http://us.download.nvidia.com"
 	DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 	$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
 	check-uri "$DOWNLOAD_URI"
@@ -196,13 +184,11 @@ run-installer(){
 	check-path "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH"
 }
 7z-find(){
+	SEVEN_ZIP=
 	local PFILES=$(cygpath -wa "$PROGRAMFILES")
 	local FIND=$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)
 	for i in "${FIND[@]}"; do
-		if [[ -x "$i" ]]; then
-			check-hash "$i" && SEVEN_ZIP="$i"
-			return 0
-		fi
+		[[ -x "$i" ]] && check-hash "$i" && { SEVEN_ZIP="$i"; return 0; }
 	done
 	return 1
 }
@@ -222,25 +208,24 @@ get-deps-array(){
 	DEPS=('wget' '7z')
 }
 
-
 check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
 check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
 # get passed args opts
 while getopts asyd:cVCAirh OPTIONS; do
 	case "${OPTIONS}" in
-		a) ATTENDED=true	;;
-		s) SILENT=true		;;
-		y) YES_TO_ALL=true			;;
-		d) DOWNLOAD_PATH="$OPTARG"	;;
-		c) CLEAN_INSTALL=true	;;
+		a) ATTENDED=true				;;
+		s) SILENT=true					;;
+		y) YES_TO_ALL=true				;;
+		d) DOWNLOAD_PATH="$OPTARG"		;;
+		c) CLEAN_INSTALL=true			;;
 		V) usage | tail -n 1; exit 0	;;
-		C) CHECK_ONLY=true	;;
+		C) CHECK_ONLY=true				;;
 		A) ATTENDED=true; EXCLUDE_PKGS=	;;
-		i) INTERNATIONAL=true	;;
+		i) INTERNATIONAL=true			;;
 		r) ENABLE_REBOOT_PROMPT=true	;;
-		h) usage; exit 0	;;
-		*) usage; exit 1	;;
+		h) usage; exit 0				;;
+		*) usage; exit 1				;;
 	esac
 done
 shift $(($OPTIND - 1))
@@ -269,7 +254,7 @@ ask-prompt-setup || error "User cancelled"
 download-driver || error "wget downloading file :: $DOWNLOAD_URI"
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
-compile-setup-opts
+compile-setup-args
 run-installer || error "Installation failed or user interupted"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 check-versions && error "After all that your driver version didn't change!"
