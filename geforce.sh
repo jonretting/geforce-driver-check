@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.0431"
+VERSION="1.044"
 
 # cutomizable defaults
 DOWNLOAD_PATH=$(cygpath "${HOMEDRIVE}${HOMEPATH}/Downloads") # download driver file into this path use UNIX path
@@ -30,30 +30,21 @@ NOTEBOOK=false			# true use notebook driver version, skip check adapter type
 
 # default vars
 ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
-MSIEXEC_PATH="${ROOT_PATH}/Windows/System32/msiexec"
 CWD="$PWD"
 LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
 DESKTOP_ID="95"
 NOTEBOOK_ID="92"
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
-SETUP_ARGS="-nofinish -passive -nosplash -noeula"
-SZIP_DOWNLOAD_URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 GDC_PATH=$(dirname ${BASH_SOURCE})
 
-
-
-DEPS=('wget' '7z') # deps array
 
 # default flags (change if you know what you are doing)
 SILENT=false
 YES_TO_ALL=false
-USE_7Z_PATH=false
 CHECK_ONLY=false
 ATTENDED=false
 CLEAN_INSTALL=false
 ENABLE_REBOOT_PROMPT=false
-UPDATE=false
-DEBUG=false
 
 # clear default vars (do not edit)
 FILE_DATA=
@@ -67,6 +58,25 @@ INSTALLED_VER_NAME=
 DOWNLOAD_URI=
 
 # begin functions
+usage(){
+	echo "Geforce Driver Check
+Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
+Usage: geforce.sh [-s] [-y]
+Example: geforce.sh
+-a    Attended install (user must traverse Nvidia setup GUI)
+-s    Silent install (dont show Nvidia progress bar)
+-y    Answer 'yes' to all prompts
+-c    Clean install (removes all saved profiles and settings)
+-d    Specify download location
+-C    Only check for new version (returns version#, 0=update available, 1=no update)
+-A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
+-i    Download international driver package (driver package for non English installs)
+-r    Don't disable reboot prompt when reboot is needed (could be buged)
+-V    Displays version info
+-h    this crupt
+Version: ${VERSION}"
+	return 0
+}
 ask(){
 	while true;do
 		[ "$2" ] && { local pmt="$2";local def=; }; [ "$2" ] || { local pmt="y/n";local def=; }
@@ -167,7 +177,8 @@ extract-package(){
 	EXTRACT_PATH="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
 	7z x "$SOURCE_ARCHIVE" -o"$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null && echo "Done"
 }
-compile-setup-opts(){
+compile-setup-args(){
+	SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 	$SILENT && SETUP_ARGS+=" -s"
 	$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
 	$ATTENDED && SETUP_ARGS=
@@ -183,48 +194,39 @@ run-installer(){
 	ask "7z.exe found. Create symbolic link for 7-Zip?" || { USE_7Z_PATH=true; return 0; }
 	local BINPATH=$(which ln | sed -e "s/\/ln//")
 	check-path "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH"
-	return 0
 }
 7z-find(){
-	local PFILES=$(cygpath -wa "${PROGRAMFILES}")
-	check-path "$(cygpath -u "$PFILES")" || return 1
+	local PFILES=$(cygpath -wa "$PROGRAMFILES")
 	local FIND=$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)
 	for i in "${FIND[@]}"; do
-		[[ -x "$i" ]] && { SEVEN_ZIP="$i"; return 0; }
+		if [[ -x "$i" ]]; then
+			check-hash "$i" && SEVEN_ZIP="$i"
+			return 0
+		fi
 	done
 	return 1
 }
 7z-dl(){
+	local URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 	ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
-	wget -N -P "$DOWNLOAD_PATH" "$SZIP_DOWNLOAD_URI"
-	7z-inst || return 1
+	wget -N -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
 	7z-find
 }
 7z-inst(){
-	check-file x "$MSIEXEC_PATH" || return 1
-	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local S7PASSIVE="/passive"
-	"$MSIEXEC_PATH" $S7PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
-	return 0
+	local MSIEXEC="${ROOT_PATH}/Windows/System32/msiexec"
+	check-file x "$MSIEXEC" || return 1
+	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local PASSIVE="/passive"
+	"$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
 }
-usage(){
-	echo "Geforce Driver Check
-Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
-Usage: geforce.sh [-s] [-y]
-Example: geforce.sh
--a    Attended install (user must traverse Nvidia setup GUI)
--s    Silent install (dont show Nvidia progress bar)
--y    Answer 'yes' to all prompts
--c    Clean install (removes all saved profiles and settings)
--d    Specify download location
--C    Only check for new version (returns version#, 0=update available, 1=no update)
--A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
--i    Download international driver package (driver package for non English installs)
--r    Don't disable reboot prompt when reboot is needed (could be buged)
--V    Displays version info
--h    this crupt
-Version: ${VERSION}"
-	return 0
+get-deps-array(){
+	DEPS=('wget' '7z')
 }
+
+
+check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
+check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
+check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
+# get passed args opts
 while getopts asyd:cVCAirh OPTIONS; do
 	case "${OPTIONS}" in
 		a) ATTENDED=true	;;
@@ -242,12 +244,10 @@ while getopts asyd:cVCAirh OPTIONS; do
 	esac
 done
 shift $(($OPTIND - 1))
-check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
-check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
-check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
 check-path "$DOWNLOAD_PATH" || error "validating download path :: $DOWNLOAD_PATH"
 check-path "$GDC_PATH" || error "validating script source path :: $GDC_PATH"
 # check dependencies and foo
+get-deps-array
 for i in "${DEPS[@]}"; do
 	case "$i" in
 		7z)	check-hash 7z || 7zip || error "Dependency not found :: $i"	;;
@@ -257,15 +257,14 @@ done
 dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
 is-notebook
 get-online-data || error "in online data query :: $FILE_DATA"
-get-latest-name || error "invalid file name returned :: $FILE_NAME"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
-create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
-#INSTALLED_VER=333
 check-versions
 update-txt
 $UPDATE || exit 0
 $CHECK_ONLY && exit 0
+get-latest-name || error "invalid file name returned :: $FILE_NAME"
+create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
 ask-prompt-setup || error "User cancelled"
 download-driver || error "wget downloading file :: $DOWNLOAD_URI"
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
