@@ -30,7 +30,7 @@ NOTEBOOK=false			# true use notebook driver version, skip check adapter type
 
 # default vars
 ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
-MSIEXEC_PATH="${ROOT_PATH}/Windows/msiexec"
+MSIEXEC_PATH="${ROOT_PATH}/Windows/System32/msiexec"
 CWD="$PWD"
 LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
 DESKTOP_ID="95"
@@ -53,8 +53,8 @@ CHECK_ONLY=false
 ATTENDED=false
 CLEAN_INSTALL=false
 ENABLE_REBOOT_PROMPT=false
-DEBUG=false
 UPDATE=false
+DEBUG=false
 
 # clear default vars (do not edit)
 FILE_DATA=
@@ -87,12 +87,19 @@ check-path(){
 	[[ -d "$1" ]] && [[ -r "$1" ]] || return 1 
 	return 0
 }
-check-file(){
-	[[ -e "$1" ]] && [[ -r "$1" ]] || return 1
-	return 0
-}
 check-mkdir (){
 	check-path "$1" || mkdir || return 1
+	return 0
+}
+check-file(){
+	while [[ ${#} -gt 0 ]]; do
+		case $1 in
+			x) [[ -e "$2" && -x "$2" ]] || return 1 ;;
+			r) [[ -e "$2" && -r "$2" ]] || return 1 ;;
+		    *) [[ -e "$1" ]] || return 1 ;;
+		esac
+		shift
+	done
 	return 0
 }
 check-os-ver(){
@@ -191,40 +198,34 @@ run-installer(){
 	echo "Done"
 	return 0
 }
-# dependency resolution functions
 7zip(){
-	7z-find || 7z-find " (x86)" || 7z-dli || return 1
+	7z-find || 7z-dl || return 1
 	[[ -z $SEVEN_ZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
-	if ask "7z.exe found. Create symbolic link for 7-Zip?"; then
-		local BINPATH=$(which ln | sed -e "s/\/ln//")
-		check-path "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH" || error "creating 7z symbolic link"
-		return 0
-	else
-		USE_7Z_PATH=true
-		return 0
-	fi
+	ask "7z.exe found. Create symbolic link for 7-Zip?" || { USE_7Z_PATH=true; return 0; }
+	local BINPATH=$(which ln | sed -e "s/\/ln//")
+	check-path "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH"
+	return 0
 }
 7z-find(){
-	check-path "${ROOT_PATH}/Program Files${1}" || return 1
-	local FIND=$(find "${ROOT_PATH}/Program Files${1}" -maxdepth 2 -type f -name "7z.exe" -print)
-	for i in "$FIND"; do
-		[[ -x "${i}" ]] && { SEVEN_ZIP="${i}"; return 0; }
+	local PFILES=$(cygpath -wa "${PROGRAMFILES}")
+	check-path "$(cygpath -u "$PFILES")" || return 1
+	local FIND=$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)
+	for i in "${FIND[@]}"; do
+		[[ -x "$i" ]] && { SEVEN_ZIP="$i"; return 0; }
 	done
 	return 1
 }
-7z-dli (){
-	if ask "Download 7-Zip v9.22 x86_64 msi package?"; then
-		wget -N -P "$DOWNLOAD_PATH" "$SZIP_DOWNLOAD_URI"
-		[[ -x "$MSIEXEC_PATH" ]] || error "msiexec not executable :: $MSIEXEC_PATH"
-		if ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2"; then
-			"${ROOT_PATH}/Windows/System32/msiexec.exe" /passive /norestart /i $(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi") || error "installing 7-Zip, or user cancelled"
-		else
-			cygstart -w "${ROOT_PATH}/Windows/System32/msiexec.exe" /norestart /i $(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi") || error "installing 7-Zip, or user cancelled"
-		fi
-		7z-find || 7z-find " (x86)"
-	else
-		error "User cancelled 7-Zip download"
-	fi
+7z-dl(){
+	ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
+	wget -N -P "$DOWNLOAD_PATH" "$SZIP_DOWNLOAD_URI"
+	7z-inst || return 1
+	7z-find
+}
+7z-inst(){
+	check-file x "$MSIEXEC_PATH" || return 1
+	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local S7PASSIVE="/passive"
+	"$MSIEXEC_PATH" $S7PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
+	return 0
 }
 usage(){
 	echo "Geforce Driver Check
