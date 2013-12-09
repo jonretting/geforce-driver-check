@@ -5,7 +5,7 @@ Copyright (c) 2013 Jon Retting
 
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC Webpage](http://jonretting.github.io/geforce-driver-check/)
-- [Latest Milestone v1.045 RC2](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-v1.45-RC2.zip/download)
+- [Latest Milestone v1.045 RC2](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-v1.045-RC2.zip/download)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
 INFO:
