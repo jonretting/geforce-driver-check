@@ -39,10 +39,9 @@ EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.O
 SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 SZIP_DOWNLOAD_URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 GDC_PATH=$(dirname ${BASH_SOURCE})
-CYG_USER=$(whoami)
-WIN_USER="$USERNAME"
-OS_VERSION=$(uname -s)
-ARCH_TYPE=$(uname -m)
+
+
+
 DEPS=('wget' '7z') # deps array
 
 # default flags (change if you know what you are doing)
@@ -74,22 +73,20 @@ ask(){
 		$YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
 		[ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
 	done
+	#return $?
 }
 error(){
 	echo -e "Error: geforce.sh : $1" | tee -a /var/log/messages
 	exit 1
 }
 check-hash(){
-	hash "$1" 2>/dev/null || return 1
-	return 0
+	hash "$1" 2>/dev/null
 }
 check-path(){
-	[[ -d "$1" ]] && [[ -r "$1" ]] || return 1 
-	return 0
+	[[ -d "$1" ]] && [[ -r "$1" ]]
 }
 check-mkdir (){
-	check-path "$1" || mkdir || return 1
-	return 0
+	check-path "$1" || mkdir "$1"
 }
 check-file(){
 	while [[ ${#} -gt 0 ]]; do
@@ -100,103 +97,85 @@ check-file(){
 		esac
 		shift
 	done
-	return 0
 }
 check-os-ver(){
-	[[ "$OS_VERSION" == CYGWIN_NT-6* ]] || return 1
-	return 0
+	local OS_VERSION=$(uname -s)
+	[[ "$OS_VERSION" == CYGWIN_NT-6* ]]
 }
 check-arch-type(){
-	[[ "$ARCH_TYPE" == "x86_64" ]] || return 1
-	return 0
+	local ARCH_TYPE=$(uname -m)
+	[[ "$ARCH_TYPE" == "x86_64" ]]
 }
 check-usernames(){
-	[[ -n "$CYG_USER" && -n "$WIN_USER" ]] || return 1
-	return 0
+	local CYG_USER=$(whoami)
+	local WIN_USER="$USERNAME"
+	[[ -n "$CYG_USER" && -n "$WIN_USER" ]]
 }
 dev-archive(){
 	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
-	check-file "${GDC_PATH}/devices_notebook.txt" || return 1
-	return 0
+	check-file "${GDC_PATH}/devices_notebook.txt"
 }
 get-online-data(){
 	$NOTEBOOK && LINK+="$NOTEBOOK_ID" || LINK+="$DESKTOP_ID"
 	FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
-	[[ $FILE_DATA == *.exe ]] || return 1
-	return 0
+	[[ $FILE_DATA == *.exe ]]
 }
 get-latest-name(){
 	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
-	[[ $FILE_NAME == *.exe ]] || return 1
-	return 0
+	[[ $FILE_NAME == *.exe ]]
 }
 get-latest-ver(){
 	LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
-	[[ $LATEST_VER =~ ^[0-9]+$ ]] || return 1
-	return 0
+	[[ $LATEST_VER =~ ^[0-9]+$ ]]
 }
 get-installed-ver(){
 	INSTALLED_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
 	INSTALLED_VER_NAME=$(echo $INSTALLED_VER | sed "s/./.&/4")
-	[[ $INSTALLED_VER =~ ^[0-9]+$ ]] || return 1
-	return 0
+	[[ $INSTALLED_VER =~ ^[0-9]+$ ]]
 }
 is-notebook(){
 	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" || return 1
-	return 0
+	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 }
 check-uri(){
-	wget -t 1 -T 3 -q --spider "$1" || return 1
-	return 0
+	wget -t 1 -T 3 -q --spider "$1"
 }
 create-driver-uri(){
 	DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 	$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
-	check-uri "$DOWNLOAD_URI" || return 1
-	return 0
+	check-uri "$DOWNLOAD_URI"
 }
 check-versions(){
-	$DEBUG && INSTALLED_VER="33090"
-	[[ $INSTALLED_VER -ge $LATEST_VER ]] && return 1
-	return 0
+	UPDATE=false
+	[[ $INSTALLED_VER -lt $LATEST_VER ]] && UPDATE=true
 }
 update-txt(){
-	$1 || echo -e "Already latest version: $INSTALLED_VER_NAME"
-	$1 && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
-	return 0
+	$UPDATE || echo -e "Already latest version: $INSTALLED_VER_NAME"
+	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
 }
 ask-prompt-setup(){
-	ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?" || {
-		echo "User cancelled"; return 1; }
-	return 0
+	ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?"
 }
 download-driver(){
 	echo -e "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
-	wget -N -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI" || return 1
-	return 0
+	wget -N -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
 }
 extract-package(){
 	echo -ne "Extracting new driver archive..."
-	SOURCE_ARCHIVE="${DOWNLOAD_PATH}/${FILE_NAME}"
+	SOURCE_ARCHIVE="$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
 	EXTRACT_PATH="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
-	7z x $(cygpath -wa "$SOURCE_ARCHIVE") -o "$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null || return 1
-	echo "Done"
-	return 0
+	7z x "$SOURCE_ARCHIVE" -o"$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null && echo "Done"
 }
 compile-setup-opts(){
 	$SILENT && SETUP_ARGS+=" -s"
 	$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
 	$ATTENDED && SETUP_ARGS=
 	$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
-	return 0
 }
 run-installer(){
 	echo -ne "Executing installer setup..."
-	$DEBUG || cygstart -w "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" || return 1
-	echo "Done"
-	return 0
+	cygstart -w "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
 }
 7zip(){
 	7z-find || 7z-dl || return 1
@@ -265,7 +244,6 @@ done
 shift $(($OPTIND - 1))
 check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
-check-usernames || error "validating session usernames :: $WIN_USER / $CYG_USER"
 check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
 check-path "$DOWNLOAD_PATH" || error "validating download path :: $DOWNLOAD_PATH"
 check-path "$GDC_PATH" || error "validating script source path :: $GDC_PATH"
@@ -277,21 +255,22 @@ for i in "${DEPS[@]}"; do
 	esac
 done
 dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
-is-notebook && NOTEBOOK=true
+is-notebook
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
-get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
-check-versions && UPDATE=true
-$UPDATE || update-txt false
-$UPDATE && update-txt true
-$UPDATE && $CHECK_ONLY && exit 1
-$UPDATE && ask-prompt-setup || exit 1
+get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
+#INSTALLED_VER=333
+check-versions
+update-txt
+$UPDATE || exit 0
+$CHECK_ONLY && exit 0
+ask-prompt-setup || error "User cancelled"
 download-driver || error "wget downloading file :: $DOWNLOAD_URI"
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
-compile-setup-opts || error "passing arg option issue"
+compile-setup-opts
 run-installer || error "Installation failed or user interupted"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 check-versions && error "After all that your driver version didn't change!"
