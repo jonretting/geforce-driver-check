@@ -5,7 +5,7 @@ Copyright (c) 2013 Jon Retting
 
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC Webpage](http://jonretting.github.io/geforce-driver-check/)
-- [Latest Milestone v1.041](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-beta-v1.041.zip/download)
+- [Latest Milestone v1.045 RC2](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-v1.45-RC2.zip/download)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
 INFO:
@@ -13,8 +13,10 @@ INFO:
 - Requires CYGWIN
 - Currently supports only Windows 7 x64 and Windows 8 x64
 - Works with Desktop and Notebook Graphics adapaters
+- No configuration needed to run, simply bash the slut
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
+- Will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
 - If 7zip is not found, GDC will prompt to download x64 msi, then prompt to attended or unattended install
 - Supports the international driver package version when "-i" is envoked
 - Only installs Display Driver, HD Audio, and PshyX
@@ -22,15 +24,13 @@ INFO:
 - Will install automatically, no interaction needed
 - Displays Nvidia installation progress box
 - Runs driver setup with all driver packages when "-A" is envoked enables "-a" aswell
-- Script will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
-- You can check and see if a new version is available with "-C" won't download new driver, won't install
+- You can check and see if a new version is available with "-C" won't prompt to download and continue
 - Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver#"
-- The -r option will enable Nvidia driver installer to prompy user to reboot if needed (untested)
-- Use only linux/cygwin paths, all paths are checked before being used
+- The -r option will enable Nvidia driver installer to prompt user to reboot if needed (untested)
 
 DEPENDENCIES:
 -------------
-wget, 7-Zip (prompts to download/install if not found), cygpath
+wget, 7-Zip (prompts to download/install 7-Zip if not found)
 
 OPTIONS:
 --------
@@ -78,9 +78,10 @@ TODO:
 - add notification email switch when update is available
 - make crontab friendly
 - allow for other types ex: x86 version, only whql
-- specify root path as option
 - add reinstallation option force reinstall
 - maybe add D3DOverrider 
+- add geforce inspector tool install options
 - add ntune o/c settings option show oc pane
 - maybe add NVIDIA Pixel Clock Patcher
+- add driver purge style installation
 - make readme not terrible
