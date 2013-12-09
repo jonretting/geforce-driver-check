@@ -27,16 +27,10 @@ INFO:
 - Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver#"
 - The -r option will enable Nvidia driver installer to prompy user to reboot if needed (untested)
 - Use only linux/cygwin paths, all paths are checked before being used
-- If default DOWNLOAD_PATH="/cygdrive/e/Downloads" is incorrent, fallback is Windows user's Downloads library
 
 DEPENDENCIES:
 -------------
-wget, 7-Zip (prompts to install if not found), cygpath
-
-CONFIGURE:
-----------
-- Specify default DOWNLOAD_PATH="/path" or use the -d option, fallback is /cygdrive/c/Users/current-user=name/Downloads as fallback
-- Specify your root os path if different than ROOT_PATH="/cygdrive/c"
+wget, 7-Zip (prompts to download/install if not found), cygpath
 
 OPTIONS:
 --------
