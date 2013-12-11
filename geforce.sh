@@ -28,7 +28,6 @@ INTERNATIONAL=false		# true use international driver package version multi langu
 
 # default vars
 ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
-GDC_PATH=$(dirname ${BASH_SOURCE})
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 
 # default flags (change if you know what you are doing)
@@ -72,21 +71,25 @@ error() {
 check-hash() {
 	hash "$1" 2>/dev/null
 }
-check-path() {
-	[[ -d "$1" ]] && [[ -r "$1" ]]
-}
-check-mkdir () {
-	check-path "$1" || mkdir "$1"
-}
 check-file() {
 	while [[ ${#} -gt 0 ]]; do
 		case $1 in
-			x) [[ -e "$2" && -x "$2" ]] || return 1 ;;
-			r) [[ -e "$2" && -r "$2" ]] || return 1 ;;
+			x) [[ -x "$2" ]] || return 1 ;;
+			r) [[ -r "$2" ]] || return 1 ;;
+			s) [[ -s "$2" ]] || return 1 ;;
+		   rs) [[ -r "$2" && -s "$2" ]] || return 1 ;; #file read > 0
+			h) [[ -h "$2" ]] || return 1 ;;
+		   dr) [[ -d "$2" && -r "$2" ]] || return 1 ;; #path read
 		    *) [[ -e "$1" ]] || return 1 ;;
 		esac
 		shift
 	done
+}
+check-path() {
+	check-file dr "$1"
+}
+check-mkdir () {
+	check-path "$1" || mkdir "$1"
 }
 check-os-ver() {
 	local OS_VERSION=$(uname -s)
@@ -103,7 +106,18 @@ check-usernames() {
 }
 dev-archive() {
 	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
-	check-file "${GDC_PATH}/devices_notebook.txt"
+	check-file rs "${GDC_PATH}/devices_notebook.txt"
+}
+get-gdc-path() {
+	GDC_PATH=
+	local SOURCE="${BASH_SOURCE[0]}"
+	while [[ -h "$SOURCE" ]]; do
+		local DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+		local SOURCE="$(readlink "$SOURCE")"
+		[[ $SOURCE != /* ]] && local SOURCE="$DIR/$SOURCE"
+	done
+	GDC_PATH="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+	[[ -x "${GDC_PATH}/geforce.sh" ]]
 }
 get-online-data() {
 	FILE_DATA=
@@ -209,9 +223,11 @@ get-deps-array() {
 	DEPS=('wget' '7z')
 }
 
+get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
 check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
+
 # get passed args opts
 while getopts asyd:cVCAirh OPTIONS; do
 	case "${OPTIONS}" in
@@ -230,8 +246,12 @@ while getopts asyd:cVCAirh OPTIONS; do
 	esac
 done
 shift $(($OPTIND - 1))
+
 check-path "$DOWNLOAD_PATH" || error "validating download path :: $DOWNLOAD_PATH"
-check-path "$GDC_PATH" || error "validating script source path :: $GDC_PATH"
+
+echo "$GDC_PATH"
+exit 0
+
 # check dependencies and foo
 get-deps-array
 for i in "${DEPS[@]}"; do
@@ -240,6 +260,7 @@ for i in "${DEPS[@]}"; do
 		 *)	check-hash "$i" || error "Dependency not found :: $i"	;;
 	esac
 done
+
 dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
 is-notebook
 get-online-data || error "in online data query :: $FILE_DATA"
