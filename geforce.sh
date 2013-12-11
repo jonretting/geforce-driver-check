@@ -40,7 +40,7 @@ CLEAN_INSTALL=false
 ENABLE_REBOOT_PROMPT=false
 
 # begin functions
-usage(){
+usage() {
 	echo "Geforce Driver Check
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
 Usage: geforce.sh [-s] [-y]
@@ -58,27 +58,27 @@ Example: geforce.sh
 -h    this crupt
 Version: ${VERSION}"
 }
-ask(){
+ask() {
 	while true;do
 		[ "$2" ] && { local pmt="$2";local def=; }; [ "$2" ] || { local pmt="y/n";local def=; }
 		$YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
 		[ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
 	done
 }
-error(){
+error() {
 	echo -e "Error: geforce.sh : $1" | tee -a /var/log/messages
 	exit 1
 }
-check-hash(){
+check-hash() {
 	hash "$1" 2>/dev/null
 }
-check-path(){
+check-path() {
 	[[ -d "$1" ]] && [[ -r "$1" ]]
 }
-check-mkdir (){
+check-mkdir () {
 	check-path "$1" || mkdir "$1"
 }
-check-file(){
+check-file() {
 	while [[ ${#} -gt 0 ]]; do
 		case $1 in
 			x) [[ -e "$2" && -x "$2" ]] || return 1 ;;
@@ -88,24 +88,24 @@ check-file(){
 		shift
 	done
 }
-check-os-ver(){
+check-os-ver() {
 	local OS_VERSION=$(uname -s)
 	[[ "$OS_VERSION" == CYGWIN_NT-6* ]]
 }
-check-arch-type(){
+check-arch-type() {
 	local ARCH_TYPE=$(uname -m)
 	[[ "$ARCH_TYPE" == "x86_64" ]]
 }
-check-usernames(){
+check-usernames() {
 	local CYG_USER=$(whoami)
 	local WIN_USER="$USERNAME"
 	[[ -n "$CYG_USER" && -n "$WIN_USER" ]]
 }
-dev-archive(){
+dev-archive() {
 	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
 	check-file "${GDC_PATH}/devices_notebook.txt"
 }
-get-online-data(){
+get-online-data() {
 	FILE_DATA=
 	local DESKTOP_ID="95"
 	local NOTEBOOK_ID="92"
@@ -115,96 +115,97 @@ get-online-data(){
 	FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
 	[[ $FILE_DATA == *.exe ]]
 }
-get-latest-name(){
+get-latest-name() {
 	FILE_NAME=
 	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
 	[[ $FILE_NAME == *.exe ]]
 }
-get-latest-ver(){
+get-latest-ver() {
 	LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 	[[ $LATEST_VER =~ ^[0-9]+$ ]]
 }
-get-installed-ver(){
+get-installed-ver() {
 	INSTALLED_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
 	INSTALLED_VER_NAME=$(echo $INSTALLED_VER | sed "s/./.&/4")
 	[[ $INSTALLED_VER =~ ^[0-9]+$ ]]
 }
-is-notebook(){
+is-notebook() {
 	NOTEBOOK=false
 	local VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
 	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 }
-check-uri(){
+check-uri() {
 	wget -t 1 -T 3 -q --spider "$1"
 }
-create-driver-uri(){
+create-driver-uri() {
 	local DOWNLOAD_MIRROR="http://us.download.nvidia.com"
 	DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 	$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
 	check-uri "$DOWNLOAD_URI"
 }
-check-versions(){
+check-versions() {
 	UPDATE=false
 	[[ $INSTALLED_VER -lt $LATEST_VER ]] && UPDATE=true
 }
-update-txt(){
+update-txt() {
 	$UPDATE || echo -e "Already latest version: $INSTALLED_VER_NAME"
 	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
 }
-ask-prompt-setup(){
+ask-prompt-setup() {
 	ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?"
 }
-download-driver(){
+download-driver() {
 	echo -e "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
 	wget -N -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
 }
-extract-package(){
+extract-package() {
 	echo -ne "Extracting new driver archive..."
 	SOURCE_ARCHIVE="$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
 	EXTRACT_PATH="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
 	7z x "$SOURCE_ARCHIVE" -o"$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null && echo "Done"
 }
-compile-setup-args(){
+compile-setup-args() {
 	SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 	$SILENT && SETUP_ARGS+=" -s"
 	$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
 	$ATTENDED && SETUP_ARGS=
 	$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
 }
-run-installer(){
+run-installer() {
 	echo -ne "Executing installer setup..."
 	cygstart -w "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
 }
-7zip(){
+7zip() {
 	7z-find || 7z-dl || return 1
 	[[ -z $SEVEN_ZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
 	ask "7z.exe found. Create symbolic link for 7-Zip?" || { USE_7Z_PATH=true; return 0; }
 	local BINPATH=$(which ln | sed -e "s/\/ln//")
 	check-path "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH"
 }
-7z-find(){
+7z-find() {
 	SEVEN_ZIP=
 	local PFILES=$(cygpath -wa "$PROGRAMFILES")
-	local FIND=$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)
-	for i in "${FIND[@]}"; do
+	local FIND="$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
+	for i in "$FIND"; do
 		[[ -x "$i" ]] && check-hash "$i" && { SEVEN_ZIP="$i"; return 0; }
 	done
 	return 1
 }
-7z-dl(){
+
+7z-dl() {
 	local URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 	ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
 	wget -N -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
 	7z-find
 }
-7z-inst(){
+7z-inst() {
 	local MSIEXEC="${ROOT_PATH}/Windows/System32/msiexec"
 	check-file x "$MSIEXEC" || return 1
 	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local PASSIVE="/passive"
 	"$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
 }
-get-deps-array(){
+get-deps-array() {
 	DEPS=('wget' '7z')
 }
 
