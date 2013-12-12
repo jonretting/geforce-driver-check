@@ -90,6 +90,10 @@ check-path() {
 check-mkdir () {
 	check-path "$1" || mkdir "$1"
 }
+is-cygwin() {
+	CYGWIN="$(uname -o)"
+	[[ "$CYGWIN" == "Cygwin" ]]
+}
 get-os-ver() {
 	local OS_VERSION=$(uname -s)
 	[[ "$OS_VERSION" == CYGWIN_NT-6* ]]
@@ -241,7 +245,7 @@ run-installer() {
 	"$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
 }
 get-deps-array() {
-	DEPS=('cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z')
+	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z')
 }
 
 # get passed args opts
@@ -272,6 +276,7 @@ for i in "${DEPS[@]}"; do
 	esac
 done
 
+is-cygwin || error "detecting Cygwin (cygwin -o) :: $CYGWIN"
 get-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 get-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
 get-username || error "cygwin user != windows user :: $GDC_USER"
