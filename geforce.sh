@@ -90,7 +90,7 @@ check-path() {
 check-mkdir () {
 	check-path "$1" || mkdir "$1"
 }
-check-os-ver() {
+get-os-ver() {
 	local OS_VERSION=$(uname -s)
 	[[ "$OS_VERSION" == CYGWIN_NT-6* ]]
 }
@@ -107,7 +107,7 @@ get-username() {
 	GDC_USER="$CYG_USER"
 	[[ "$CYG_USER" == "$WIN_USER" ]]
 }
-dev-archive() {
+devices-archive() {
 	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
 	check-file rs "${GDC_PATH}/devices_notebook.txt"
 }
@@ -272,13 +272,13 @@ for i in "${DEPS[@]}"; do
 	esac
 done
 
-check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
-check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
+get-os-ver || error "Unsupported OS Version :: $OS_VERSION"
+get-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
 get-username || error "cygwin user != windows user :: $GDC_USER"
 get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
 get-download-path || error "validating download path :: $DOWNLOAD_PATH"
-dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
+devices-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
 get-adapter || error "determining if is nvidia adapter"
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
