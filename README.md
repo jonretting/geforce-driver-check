@@ -86,4 +86,4 @@ TODO:
 - add driver purge style installation
 - make readme not terrible
 
-[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/f0e140d836c1d81182e35971db41a4b6 "githalytics.com")](http://githalytics.com/jonretting/geforce-driver-check)
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/f4cd2939f768a36a2d9fde68cfb661f7 "githalytics.com")](http://githalytics.com/jonretting/geforce-driver-check)
