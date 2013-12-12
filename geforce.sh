@@ -22,12 +22,11 @@
 VERSION="1.045"
 
 # cutomizable defaults
-DOWNLOAD_PATH=$(cygpath "${HOMEDRIVE}${HOMEPATH}/Downloads") # download driver file into this path use UNIX path
+DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
 EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
 INTERNATIONAL=false		# true use international driver package version multi language support
 
 # default vars
-ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 
 # default flags (change if you know what you are doing)
@@ -38,7 +37,7 @@ ATTENDED=false
 CLEAN_INSTALL=false
 ENABLE_REBOOT_PROMPT=false
 
-# begin functions
+# functions
 usage() {
 	echo "Geforce Driver Check
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
@@ -95,14 +94,18 @@ check-os-ver() {
 	local OS_VERSION=$(uname -s)
 	[[ "$OS_VERSION" == CYGWIN_NT-6* ]]
 }
-check-arch-type() {
+get-arch-type() {
 	local ARCH_TYPE=$(uname -m)
+	[[ -n "$ARCH_TYPE" ]] || local ARCH_TYPE="${MACHTYPE:0:6}"
+	[[ -n "$ARCH_TYPE" ]] || local PFILES="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files (x86)"
+	[[ -n "$ARCH_TYPE" ]] || [[ -d "$PFILES" ]] && ARCH_TYPE="x86_64"
 	[[ "$ARCH_TYPE" == "x86_64" ]]
 }
-check-usernames() {
+get-username() {
 	local CYG_USER=$(whoami)
 	local WIN_USER="$USERNAME"
-	[[ -n "$CYG_USER" && -n "$WIN_USER" ]]
+	GDC_USER="$CYG_USER"
+	[[ "$CYG_USER" == "$WIN_USER" ]]
 }
 dev-archive() {
 	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
@@ -115,9 +118,21 @@ get-gdc-path() {
 		local DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 		local SOURCE="$(readlink "$SOURCE")"
 		[[ $SOURCE != /* ]] && local SOURCE="$DIR/$SOURCE"
+		let local C=C+1; [[ $C -gt 3 ]] && return 1
 	done
 	GDC_PATH="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-	[[ -x "${GDC_PATH}/geforce.sh" ]]
+	check-path "$GDC_PATH"
+}
+get-root-path() {
+	ROOT_PATH=
+	[[ -n "$SYSTEMDRIVE" ]] && ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
+	check-path "$ROOT_PATH" || ROOT_PATH="$(cd -P "$(cygpath -W)"; cd .. && pwd)"
+	check-path "$ROOT_PATH" || ROOT_PATH="$(which explorer.exe | sed 's/.Windows\/explorer\.exe//')"
+}
+get-download-path() {
+	check-path "$DOWNLOAD_PATH" && return 0
+	DOWNLOAD_PATH="$(cd -P "$(cygpath -O)" && cd ../Downloads && pwd)"
+	check-path "$DOWNLOAD_PATH"
 }
 get-online-data() {
 	FILE_DATA=
@@ -127,14 +142,17 @@ get-online-data() {
 	$NOTEBOOK && local LINK+="$NOTEBOOK_ID" || local LINK+="$DESKTOP_ID"
 	# needs refactor main web query
 	FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
-	[[ $FILE_DATA == *.exe ]]
+	[[ "$FILE_DATA" == *.exe ]]
 }
 get-latest-name() {
 	FILE_NAME=
+	[[ $1 -eq 1 ]] && get-online-data
 	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
-	[[ $FILE_NAME == *.exe ]]
+	[[ "$FILE_NAME" == *.exe ]]
 }
 get-latest-ver() {
+	LATEST_VER=;LATEST_VER_NAME=
+	[[ $1 -eq 1 ]] && get-online-data
 	LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 	[[ $LATEST_VER =~ ^[0-9]+$ ]]
@@ -144,15 +162,18 @@ get-installed-ver() {
 	INSTALLED_VER_NAME=$(echo $INSTALLED_VER | sed "s/./.&/4")
 	[[ $INSTALLED_VER =~ ^[0-9]+$ ]]
 }
-is-notebook() {
+get-adapter() {
 	NOTEBOOK=false
-	local VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
+	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
+	[[ "$VID_DESC" == NVIDIA* ]] || return 1
 	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
+	return 0
 }
 check-uri() {
 	wget -t 1 -T 3 -q --spider "$1"
 }
 create-driver-uri() {
+	[[ $1 -eq 1 ]] && get-online-data
 	local DOWNLOAD_MIRROR="http://us.download.nvidia.com"
 	DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
 	$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
@@ -206,27 +227,22 @@ run-installer() {
 	done
 	return 1
 }
-
 7z-dl() {
 	local URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 	ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
+	get-download-path || { echo "error getting download path, try [-d /path]"; return 1; }
 	wget -N -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
 	7z-find
 }
 7z-inst() {
-	local MSIEXEC="${ROOT_PATH}/Windows/System32/msiexec"
+	local MSIEXEC="$(cygpath -S)/msiexec.exe"
 	check-file x "$MSIEXEC" || return 1
 	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local PASSIVE="/passive"
 	"$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
 }
 get-deps-array() {
-	DEPS=('wget' '7z')
+	DEPS=('cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z')
 }
-
-get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
-check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
-check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
-check-path "$ROOT_PATH" || error "validating root path :: $ROOT_PATH"
 
 # get passed args opts
 while getopts asyd:cVCAirh OPTIONS; do
@@ -247,11 +263,6 @@ while getopts asyd:cVCAirh OPTIONS; do
 done
 shift $(($OPTIND - 1))
 
-check-path "$DOWNLOAD_PATH" || error "validating download path :: $DOWNLOAD_PATH"
-
-echo "$GDC_PATH"
-exit 0
-
 # check dependencies and foo
 get-deps-array
 for i in "${DEPS[@]}"; do
@@ -261,8 +272,14 @@ for i in "${DEPS[@]}"; do
 	esac
 done
 
+check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
+check-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
+get-username || error "cygwin user != windows user :: $GDC_USER"
+get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
+get-root-path || error "validating root path :: $ROOT_PATH"
+get-download-path || error "validating download path :: $DOWNLOAD_PATH"
 dev-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
-is-notebook
+get-adapter || error "determining if is nvidia adapter"
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
