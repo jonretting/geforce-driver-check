@@ -81,6 +81,7 @@ EXAMPLES:
 
 TODO:
 -----
+
 - create windows shortcuts to geforce.sh option, launch from windows bat file
 - add notification email switch when update is available
 - make crontab friendly
