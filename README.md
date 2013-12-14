@@ -81,7 +81,6 @@ EXAMPLES:
 
 TODO:
 -----
-
 - create windows shortcuts to geforce.sh option, launch from windows bat file
 - add notification email switch when update is available
 - make crontab friendly
@@ -94,6 +93,6 @@ TODO:
 - maybe add NVIDIA Pixel Clock Patcher
 - add driver purge style installation, complete graphics driver removal
 - make readme not terrible
-
+- - -
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/f4cd2939f768a36a2d9fde68cfb661f7 "githalytics.com")](http://githalytics.com/jonretting/geforce-driver-check)
