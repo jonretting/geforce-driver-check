@@ -52,32 +52,25 @@ OPTIONS:
 EXAMPLES:
 ---------
 • Run default
-	
-	./geforce.sh
+`./geforce.sh`
 
 • Run with International (driver package for non English installs)
-	
-	./geforce.sh -i
+`./geforce.sh -i`
 
 • Run with all packages enabled (GFexperience, Geforce Vission, etc) fully attended install
-	
-	./geforce.sh -A
+`./geforce.sh -A`
 
 • Run with fully attended install enabled, will requires user to progress through Nvidia setup GUI
-	
-	./geforce.sh -a
+`./geforce.sh -a`
 
 • Run completely silent answers "yes" to all prompts, doesn't display any Nvidia GUI (no driver install progress window)
-	
-	./geforce.sh -s
+`./geforce.sh -s`
 
 • Run and only see if you need an update and exit
-	
-	./geforce.sh -C
+`./geforce.sh -C`
 
 • Run with Download path specified, yes to all prompts, and silent driver install (no Nvidia GUI)
-	
-	./geforce.sh -d "/home/me/Downloads" -s -y
+`./geforce.sh -d "/home/me/Downloads" -s -y`
 
 TODO:
 -----
@@ -93,6 +86,9 @@ TODO:
 - maybe add NVIDIA Pixel Clock Patcher
 - add driver purge style installation, complete graphics driver removal
 - make readme not terrible
-- - -
+
+
+
+
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/f4cd2939f768a36a2d9fde68cfb661f7 "githalytics.com")](http://githalytics.com/jonretting/geforce-driver-check)
