@@ -109,7 +109,6 @@ get-username() {
 	local CYG_USER=$(whoami)
 	local WIN_USER="$USERNAME"
 	GDC_USER="$CYG_USER"
-	[[ "$CYG_USER" == "$WIN_USER" ]]
 }
 devices-archive() {
 	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
@@ -279,7 +278,7 @@ done
 is-cygwin || error "detecting Cygwin (cygwin -o) :: $CYGWIN"
 get-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 get-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
-get-username || error "cygwin user != windows user :: $GDC_USER"
+get-username 
 get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
 get-download-path || error "validating download path :: $DOWNLOAD_PATH"
