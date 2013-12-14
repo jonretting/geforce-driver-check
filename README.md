@@ -52,38 +52,39 @@ OPTIONS:
 EXAMPLES:
 --------
 • Run default
-
 	./geforce.sh
+
 • Run with International (driver package for non English installs)
-
 	./geforce.sh -i
+
 • Run with all packages enabled (GFexperience, Geforce Vission, etc) fully attended install
-
 	./geforce.sh -A
+
 • Run with fully attended install enabled, will requires user to progress through Nvidia setup GUI
-
 	./geforce.sh -a
+
 • Run completely silent answers "yes" to all prompts, doesn't display any Nvidia GUI (no driver install progress window)
-
 	./geforce.sh -s
+
 • Run and only see if you need an update and exit
-
 	./geforce.sh -C
-• Run with Download path specified, yes to all prompts, and silent driver install (no Nvidia GUI)
 
+• Run with Download path specified, yes to all prompts, and silent driver install (no Nvidia GUI)
 	./geforce.sh -d "/home/me/Downloads" -s -y
 
 TODO:
 -----
+- create windows shortcuts to geforce.sh option, launch from windows bat file
 - add notification email switch when update is available
 - make crontab friendly
+- correct handling of assorted nvidia graphics hardware
 - allow for other types ex: x86 version, only whql
-- add reinstallation option force reinstall
-- maybe add D3DOverrider 
+- add reinstallation option force reinstall 
 - add geforce inspector tool install options
 - add ntune o/c settings option show oc pane
+- add reinstallation options/force reinstall
 - maybe add NVIDIA Pixel Clock Patcher
-- add driver purge style installation
+- add driver purge style installation, complete graphics driver removal
 - make readme not terrible
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/f4cd2939f768a36a2d9fde68cfb661f7 "githalytics.com")](http://githalytics.com/jonretting/geforce-driver-check)
