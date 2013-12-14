@@ -79,6 +79,7 @@ EXAMPLES:
 	
 	./geforce.sh -d "/home/me/Downloads" -s -y
 
+
 TODO:
 -----
 - create windows shortcuts to geforce.sh option, launch from windows bat file
