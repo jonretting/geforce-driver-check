@@ -242,8 +242,11 @@ run-installer() {
 	local MSIEXEC="$(cygpath -S)/msiexec.exe"
 	check-file x "$MSIEXEC" || return 1
 	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local PASSIVE="/passive"
-	"$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
+	cygstart -w --action=runas "$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
 }
+get-download-path
+7z-inst
+exit 0
 get-deps-array() {
 	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z')
 }
