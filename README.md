@@ -72,7 +72,7 @@ EXAMPLES:
 - Run with Download path specified, yes to all prompts, and silent driver install (no Nvidia GUI)
 `./geforce.sh -d "/home/me/Downloads" -s -y`
 
-TODO:
+#### TODO:
 -----
 - create windows shortcuts to geforce.sh option, launch from windows bat file
 - add notification email switch when update is available
