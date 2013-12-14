@@ -213,7 +213,7 @@ compile-setup-args() {
 }
 run-installer() {
 	echo -ne "Executing installer setup..."
-	cygstart -w "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
+	cygstart -w --action=runas "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
 }
 7zip() {
 	7z-find || 7z-dl || return 1
@@ -276,7 +276,7 @@ for i in "${DEPS[@]}"; do
 	esac
 done
 
-is-cygwin || error "detecting Cygwin (cygwin -o) :: $CYGWIN"
+is-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
 get-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 get-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
 get-username || echo "Warning: could not retrieve current Windows username :: $USERNAME"
