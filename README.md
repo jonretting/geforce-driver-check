@@ -16,6 +16,7 @@ INFO:
 - No configuration needed to run, simply bash the slut
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
+- Option to Force-Reinstall latest version will verify integrity of downloaded archive, and act acordingly
 - Will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
 - If 7zip is not found, GDC will prompt to download x64 msi, then prompt to attended or unattended install
 - Supports the international driver package version when "-i" is envoked
@@ -41,6 +42,7 @@ OPTIONS:
 	-c    Clean install (removes all saved profiles and settings)
 	-d    Specify download location
 	-C    Only check for new version (returns version#, 0=update available, 1=no update)
+    -R    Force Reinstalls latest driver version (integrity checks on current installer package)
 	-A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
 	-i    Download international driver package (driver package for non English installs)
 	-r    Don't disable reboot prompt when reboot is needed (could be buged)
