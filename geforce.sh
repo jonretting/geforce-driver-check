@@ -19,25 +19,26 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.0456"
+VERSION="1.0459"
 
-# cutomizable defaults
-DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
-EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
-INTERNATIONAL=false		# true use international driver package version multi language support
+get-defaults() {
+	# cutomizable defaults
+	DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
+	EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
+	INTERNATIONAL=false		# true use international driver package version multi language support
 
-# default vars
-EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
+	# default vars
+	EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 
-# default flags (change if you know what you are doing)
-SILENT=false
-YES_TO_ALL=false
-CHECK_ONLY=false
-ATTENDED=false
-CLEAN_INSTALL=false
-ENABLE_REBOOT_PROMPT=false
-
-# functions
+	# default flags (change if you know what you are doing)
+	SILENT=false
+	YES_TO_ALL=false
+	CHECK_ONLY=false
+	ATTENDED=false
+	CLEAN_INSTALL=false
+	REINSTALL=false
+	ENABLE_REBOOT_PROMPT=false
+}
 usage() {
 	echo "Geforce Driver Check v${VERSION}
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
@@ -47,6 +48,7 @@ Example: geforce.sh
 -s    Silent install (dont show Nvidia progress bar)
 -y    Answer 'yes' to all prompts
 -c    Clean install (removes all saved profiles and settings)
+-R    Force re-install of latest driver
 -d    Specify download location
 -C    Only check for new version (returns version#, 0=update available, 1=no update)
 -A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
@@ -187,15 +189,35 @@ check-versions() {
 	[[ $INSTALLED_VER -lt $LATEST_VER ]] && UPDATE=true
 }
 update-txt() {
-	$UPDATE || echo -e "Already latest version: $INSTALLED_VER_NAME"
-	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
+	$REINSTALL && { echo "Installed verison: $INSTALLED_VER_NAME, re-installing: $LATEST_VER_NAME"; return 0; }
+	$UPDATE || echo "Already latest version: $INSTALLED_VER_NAME"
+	$UPDATE && echo "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
 }
 ask-prompt-setup() {
-	ask "Download, Extract, and Install new version ( ${LATEST_VER_NAME} ) now?"
+	local msg="Download, Extract, and Install new version"
+	ask "${msg} ( ${LATEST_VER_NAME} ) now?"
+}
+ask-reinstall() {
+	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?"
+	check-file "${DOWNLOAD_PATH}/$FILE_NAME" && validate-download && return 0
+	download-driver "again"
+}
+validate-download () {
+	echo -ne "Making sure previous archive size is valid..."
+	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/$FILE_NAME")
+	local rsize="$(wget --spider -qSO- 2>&1 "$DOWNLOAD_URI" | awk '/Length/ {print $2}')"
+	[[ $lsize -eq $rsize ]] || { echo "Failed"; sleep 2; download-driver "again"; }
+	echo "Done"
+	verify-archive
+}
+verify-archive() {
+	echo "Testing archive integrity..."
+	7z t "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
 }
 download-driver() {
-	echo -e "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
-	wget -N -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
+	echo "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
+	[[ $1 == "again" ]] && rm -f "${DOWNLOAD_PATH}/${FILE_NAME}" || local opts='-N'
+	wget $opts -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
 }
 extract-package() {
 	echo -ne "Extracting new driver archive..."
@@ -247,7 +269,7 @@ get-deps-array() {
 	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z')
 }
 get-options() {
-	local opts="asyd:cVCAirh"
+	local opts="asyd:cRVCAirh"
 	while getopts "$opts" OPTIONS; do
 		case "${OPTIONS}" in
 			a) ATTENDED=true				;;
@@ -255,6 +277,7 @@ get-options() {
 			y) YES_TO_ALL=true				;;
 			d) DOWNLOAD_PATH="$OPTARG"		;;
 			c) CLEAN_INSTALL=true			;;
+			R) REINSTALL=true				;;
 			V) echo "Version: $VERSION"; exit 0	;;
 			C) CHECK_ONLY=true				;;
 			A) ATTENDED=true; EXCLUDE_PKGS=	;;
@@ -265,16 +288,18 @@ get-options() {
 		esac
 	done
 }
+check-deps() {
+	for i in "${DEPS[@]}"; do
+		case "$i" in
+			7z)	check-hash 7z || 7zip || error "Dependency not found :: $i"	;;
+			 *)	check-hash "$i" || error "Dependency not found :: $i"	;;
+		esac
+	done
+}
 
-# check dependencies and foo
+get-defaults
 get-deps-array
-for i in "${DEPS[@]}"; do
-	case "$i" in
-		7z)	check-hash 7z || 7zip || error "Dependency not found :: $i"	;;
-		 *)	check-hash "$i" || error "Dependency not found :: $i"	;;
-	esac
-done
-
+check-deps
 get-options "$@" && shift $(($OPTIND-1))
 is-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
 get-os-ver || error "Unsupported OS Version :: $OS_VERSION"
@@ -288,14 +313,15 @@ get-adapter || error "is not nvidia adapter :: $VID_DESC"
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
-check-versions
+$REINSTALL || check-versions
 update-txt
 $UPDATE || exit 0
 $CHECK_ONLY && exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
-ask-prompt-setup || error "User cancelled"
-download-driver || error "wget downloading file :: $DOWNLOAD_URI"
+$REINSTALL || ask-prompt-setup || error "User cancelled"
+$REINSTALL && ask-reinstall || error "User cancelled"
+$REINSTALL || download-driver || error "wget downloading file :: $DOWNLOAD_URI"
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
 compile-setup-args
