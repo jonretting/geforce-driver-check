@@ -80,7 +80,6 @@ EXAMPLES:
 - make crontab friendly
 - correct handling of assorted nvidia graphics hardware
 - allow for other types ex: x86 version, only whql
-- add reinstallation option force reinstall 
 - add geforce inspector tool install options
 - add ntune o/c settings option show oc pane
 - add reinstallation options/force reinstall
