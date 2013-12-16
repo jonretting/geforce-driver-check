@@ -246,25 +246,25 @@ run-installer() {
 get-deps-array() {
 	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z')
 }
-
-# get passed args opts
-while getopts asyd:cVCAirh OPTIONS; do
-	case "${OPTIONS}" in
-		a) ATTENDED=true				;;
-		s) SILENT=true					;;
-		y) YES_TO_ALL=true				;;
-		d) DOWNLOAD_PATH="$OPTARG"		;;
-		c) CLEAN_INSTALL=true			;;
-		V) echo "Version: $VERSION"; exit 0	;;
-		C) CHECK_ONLY=true				;;
-		A) ATTENDED=true; EXCLUDE_PKGS=	;;
-		i) INTERNATIONAL=true			;;
-		r) ENABLE_REBOOT_PROMPT=true	;;
-		h) usage; exit 0				;;
-		*) usage; exit 1				;;
-	esac
-done
-shift $(($OPTIND - 1))
+get-options() {
+	local opts="asyd:cVCAirh"
+	while getopts "$opts" OPTIONS; do
+		case "${OPTIONS}" in
+			a) ATTENDED=true				;;
+			s) SILENT=true					;;
+			y) YES_TO_ALL=true				;;
+			d) DOWNLOAD_PATH="$OPTARG"		;;
+			c) CLEAN_INSTALL=true			;;
+			V) echo "Version: $VERSION"; exit 0	;;
+			C) CHECK_ONLY=true				;;
+			A) ATTENDED=true; EXCLUDE_PKGS=	;;
+			i) INTERNATIONAL=true			;;
+			r) ENABLE_REBOOT_PROMPT=true	;;
+			h) usage; exit 0				;;
+			*) usage; exit 1				;;
+		esac
+	done
+}
 
 # check dependencies and foo
 get-deps-array
@@ -275,6 +275,7 @@ for i in "${DEPS[@]}"; do
 	esac
 done
 
+get-options "$@" && shift $(($OPTIND-1))
 is-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
 get-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 get-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
