@@ -34,7 +34,7 @@ wget, 7-Zip (prompts to download/install 7-Zip if not found)
 
 OPTIONS:
 --------
-	geforce.sh [-a] [-s] [-y] [-c] [-d] [-C] [-A] [-V] [-h]
+	geforce.sh [-asycCAirVh] [-d=/download/path]
 	-a    Attended install (user must traverse Nvidia setup GUI)
 	-s    Silent install (dont show Nvidia progress bar)
 	-y    Answer 'yes' to all prompts
@@ -85,9 +85,3 @@ EXAMPLES:
 - maybe add NVIDIA Pixel Clock Patcher
 - add driver purge style installation, complete graphics driver removal
 - make readme not terrible
-
-
-
-
-
-[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/f4cd2939f768a36a2d9fde68cfb661f7 "githalytics.com")](http://githalytics.com/jonretting/geforce-driver-check)
