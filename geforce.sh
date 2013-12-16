@@ -39,9 +39,9 @@ ENABLE_REBOOT_PROMPT=false
 
 # functions
 usage() {
-	echo "Geforce Driver Check
+	echo "Geforce Driver Check v${VERSION}
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
-Usage: geforce.sh [-s] [-y]
+Usage: geforce.sh [-asycCAirVh] [-d=\"/download/path\"]
 Example: geforce.sh
 -a    Attended install (user must traverse Nvidia setup GUI)
 -s    Silent install (dont show Nvidia progress bar)
@@ -53,8 +53,7 @@ Example: geforce.sh
 -i    Download international driver package (driver package for non English installs)
 -r    Don't disable reboot prompt when reboot is needed (could be buged)
 -V    Displays version info
--h    this crupt
-Version: ${VERSION}"
+-h    this crupt"
 }
 ask() {
 	while true;do
@@ -256,7 +255,7 @@ while getopts asyd:cVCAirh OPTIONS; do
 		y) YES_TO_ALL=true				;;
 		d) DOWNLOAD_PATH="$OPTARG"		;;
 		c) CLEAN_INSTALL=true			;;
-		V) usage | tail -n 1; exit 0	;;
+		V) echo "Version: ${Version}"; exit 0	;;
 		C) CHECK_ONLY=true				;;
 		A) ATTENDED=true; EXCLUDE_PKGS=	;;
 		i) INTERNATIONAL=true			;;
