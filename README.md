@@ -1,6 +1,6 @@
 Geforce Driver Check (GDC)
 ==========================
-### Checks for new Nvidia Display Drivers then does an automatted unattended install, or with many more options.
+### Checks for new Nvidia Display Drivers then does an automated unattended install, or with many more options.
 Copyright (c) 2013 Jon Retting
 
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
