@@ -255,7 +255,7 @@ while getopts asyd:cVCAirh OPTIONS; do
 		y) YES_TO_ALL=true				;;
 		d) DOWNLOAD_PATH="$OPTARG"		;;
 		c) CLEAN_INSTALL=true			;;
-		V) echo "Version: ${Version}"; exit 0	;;
+		V) echo "Version: $VERSION"; exit 0	;;
 		C) CHECK_ONLY=true				;;
 		A) ATTENDED=true; EXCLUDE_PKGS=	;;
 		i) INTERNATIONAL=true			;;
