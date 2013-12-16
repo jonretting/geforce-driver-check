@@ -198,7 +198,7 @@ ask-prompt-setup() {
 	ask "${msg} ( ${LATEST_VER_NAME} ) now?"
 }
 ask-reinstall() {
-	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?"
+	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?" || return 1
 	check-file "${DOWNLOAD_PATH}/$FILE_NAME" && validate-download && return 0
 	download-driver "again"
 }
