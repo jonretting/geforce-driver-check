@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # NAME: Geforce Driver Check (GDC) geforce-driver-check
 # DESC: Checks for new Nvidia Display Drivers then does an automatted unattended install, or with many more options.
-# REPO: git@github.com:jonretting/geforce-driver-check.git
-# GITHUB: https://github.com/jonretting/geforce-driver-check/
-
+# GIT: git@github.com:jonretting/geforce-driver-check.git
+# URL: https://github.com/jonretting/geforce-driver-check/
+#
 # Copyright (c) 2013 Jon Retting
 #
 #   This program is free software: you can redistribute it and/or modify
