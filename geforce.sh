@@ -99,12 +99,10 @@ get-os-ver() {
 	local OS_VERSION=$(uname -s)
 	[[ "$OS_VERSION" == CYGWIN_NT-6* ]]
 }
-get-arch-type() {
-	local ARCH_TYPE=$(uname -m)
-	[[ -n "$ARCH_TYPE" ]] || local ARCH_TYPE="${MACHTYPE:0:6}"
-	[[ -n "$ARCH_TYPE" ]] || local PFILES="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files (x86)"
-	[[ -n "$ARCH_TYPE" ]] || [[ -d "$PFILES" ]] && ARCH_TYPE="x86_64"
-	[[ "$ARCH_TYPE" == "x86_64" ]]
+get-windows-arch() {
+	local WINDOWS_ARCH="$(wmic OS get OSArchitecture /value | grep -o '64-bit')"
+	$(cd -P "$(cygpath -W)"; cd ../Program\ Files\ \(x86\)) || return 1
+	[[ "$WINDOWS_ARCH" == "64-bit" ]]
 }
 get-username() {
 	local CYG_USER=$(whoami)
@@ -266,7 +264,7 @@ run-installer() {
 	cygstart -w --action=runas "$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
 }
 get-deps-array() {
-	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z')
+	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic')
 }
 get-options() {
 	local opts="asyd:cRVCAirh"
@@ -292,6 +290,7 @@ check-deps() {
 	for i in "${DEPS[@]}"; do
 		case "$i" in
 			7z)	check-hash 7z || 7zip || error "Dependency not found :: $i"	;;
+		  wmic) check-hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH"	;;
 			 *)	check-hash "$i" || error "Dependency not found :: $i"	;;
 		esac
 	done
@@ -303,7 +302,7 @@ check-deps
 get-options "$@" && shift $(($OPTIND-1))
 is-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
 get-os-ver || error "Unsupported OS Version :: $OS_VERSION"
-get-arch-type || error "Unsupported architecture :: $ARCH_TYPE"
+get-windows-arch || error "Unsupported architecture :: $WINDOWS_ARCH"
 get-username || echo "Warning: could not retrieve current Windows username :: $USERNAME"
 get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
