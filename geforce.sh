@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.0459"
+VERSION="1.046"
 
 get-defaults() {
 	# cutomizable defaults
@@ -80,7 +80,7 @@ check-file() {
 		   rs) [[ -r "$2" && -s "$2" ]] || return 1 ;; #file read > 0
 			h) [[ -h "$2" ]] || return 1 ;;
 		   dr) [[ -d "$2" && -r "$2" ]] || return 1 ;; #path read
-		    *) [[ -e "$1" ]] || return 1 ;;
+		  	*) [[ -e "$1" ]] || return 1 ;;
 		esac
 		shift
 	done
@@ -91,18 +91,20 @@ check-path() {
 check-mkdir () {
 	check-path "$1" || mkdir "$1"
 }
-is-cygwin() {
-	CYGWIN="$(uname -o)"
-	[[ "$CYGWIN" == "Cygwin" ]]
+check-cygwin() {
+	[[ "$OSTYPE" == "cygwin" ]]
 }
-get-os-ver() {
-	local OS_VERSION=$(uname -s)
-	[[ "$OS_VERSION" == CYGWIN_NT-6* ]]
+check-os-ver() {
+	local WMIC="$(wmic os get version | grep -oE ^6\.[1-3]{1})"
+	local CYGW="$(uname -s | grep -oE 6\.[1-3]{1})"
+	OS_VERSION="Windows NT $CYGW"
+	[[ "$WMIC" == "$CYGW" ]]
 }
-get-windows-arch() {
-	local WINDOWS_ARCH="$(wmic OS get OSArchitecture /value | grep -o '64-bit')"
-	$(cd -P "$(cygpath -W)"; cd ../Program\ Files\ \(x86\)) || return 1
-	[[ "$WINDOWS_ARCH" == "64-bit" ]]
+check-windows-arch() {
+	local WMIC="$(wmic OS get OSArchitecture /value | grep -o '64-bit')"
+	local PATH="$(cd -P "$(cygpath -W)"; cd ../Program\ Files\ \(x86\) 2>/dev/null && echo "64-bit")"
+	WINDOWS_ARCH="$WMIC"
+	[[ "$WMIC" == "$PATH" ]]
 }
 get-username() {
 	local CYG_USER=$(whoami)
@@ -115,7 +117,6 @@ devices-archive() {
 	check-file rs "${GDC_PATH}/devices_notebook.txt"
 }
 get-gdc-path() {
-	GDC_PATH=
 	local SOURCE="${BASH_SOURCE[0]}"
 	while [[ -h "$SOURCE" ]]; do
 		local DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
@@ -127,7 +128,6 @@ get-gdc-path() {
 	check-path "$GDC_PATH"
 }
 get-root-path() {
-	ROOT_PATH=
 	[[ -n "$SYSTEMDRIVE" ]] && ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
 	check-path "$ROOT_PATH" || ROOT_PATH="$(cd -P "$(cygpath -W)"; cd .. && pwd)"
 	check-path "$ROOT_PATH" || ROOT_PATH="$(which explorer.exe | sed 's/.Windows\/explorer\.exe//')"
@@ -138,7 +138,6 @@ get-download-path() {
 	check-path "$DOWNLOAD_PATH"
 }
 get-online-data() {
-	FILE_DATA=
 	local DESKTOP_ID="95"
 	local NOTEBOOK_ID="92"
 	local LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
@@ -148,13 +147,11 @@ get-online-data() {
 	[[ "$FILE_DATA" == *.exe ]]
 }
 get-latest-name() {
-	FILE_NAME=
 	[[ $1 -eq 1 ]] && get-online-data
 	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
 	[[ "$FILE_NAME" == *.exe ]]
 }
 get-latest-ver() {
-	LATEST_VER=;LATEST_VER_NAME=
 	[[ $1 -eq 1 ]] && get-online-data
 	LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
 	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
@@ -300,9 +297,9 @@ get-defaults
 get-deps-array
 check-deps
 get-options "$@" && shift $(($OPTIND-1))
-is-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
-get-os-ver || error "Unsupported OS Version :: $OS_VERSION"
-get-windows-arch || error "Unsupported architecture :: $WINDOWS_ARCH"
+check-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
+check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
+check-windows-arch || error "Unsupported architecture :: $WINDOWS_ARCH"
 get-username || echo "Warning: could not retrieve current Windows username :: $USERNAME"
 get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
