@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.047 RC3"
+VERSION="1.048 RC3"
 
 # cutomizable defaults
 DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
@@ -74,13 +74,15 @@ get-defaults() {
 	CLEAN_INSTALL=false
 	REINSTALL=false
 	ENABLE_REBOOT_PROMPT=false
+	UPDATE=false
+	FAIL=false
 }
 ask() {
-        while true; do
-                [ "$2" ] && { local pmt="$2";local def=; }; [ "$2" ] || { local pmt="y/n";local def=; }
-                $YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
-                [ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
-        done
+	while true; do
+		[ "$2" ] && { local pmt="$2";local def=; }; [ "$2" ] || { local pmt="y/n";local def=; }
+		$YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
+		[ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
+	done
 }
 error() {
 	echo -e "Error: geforce.sh : $1" | tee -a /var/log/messages
@@ -198,12 +200,18 @@ create-driver-uri() {
 	check-uri "$DOWNLOAD_URI"
 }
 check-versions() {
-	UPDATE=false
-	[[ $INSTALLED_VER -lt $LATEST_VER ]] && UPDATE=true
+	if [[ $INSTALLED_VER -lt $LATEST_VER ]]; then
+		UPDATE=true; REINSTALL=false
+	elif $REINSTALL && [[ $INSTALLED_VER -eq $LATEST_VER ]]; then
+		REINSTALL=true
+	elif [[ $INSTALLED_VER -gt $LATEST_VER ]]; then
+		FAIL=true
+	fi
 }
 update-txt() {
-	$REINSTALL && { echo "Installed verison: $INSTALLED_VER_NAME, re-installing: $LATEST_VER_NAME"; return 0; }
-	$UPDATE || echo "Already latest version: $INSTALLED_VER_NAME"
+	$FAIL && error "Your installed Version is somehow newer than NVIDIA latest version"
+	$REINSTALL && echo "Installed verison: $INSTALLED_VER_NAME, re-installing: $LATEST_VER_NAME" && return 0
+	$UPDATE || echo "Already latest version: $INSTALLED_VER_NAME" 
 	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
 }
 ask-prompt-setup() {
@@ -248,6 +256,10 @@ compile-setup-args() {
 run-installer() {
 	echo -ne "Executing installer setup..."
 	cygstart -w --action=runas "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
+}
+check-result() {
+	get-installed-ver
+	[[ $INSTALLED_VER -eq $LATEST_VER ]]
 }
 7zip() {
 	7z-find || 7z-dl || return 1
@@ -304,26 +316,24 @@ get-adapter || error "is not nvidia adapter :: $VID_DESC"
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
-$REINSTALL || check-versions
-INSTALLED_VER=33165
-INSTALLED_VER_NAME="331.65"
-UPDATE=true
+check-versions
 update-txt
-$UPDATE || exit 0
 $CHECK_ONLY && exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
 if $REINSTALL; then
 	ask-reinstall || error "User cancelled"
-else
+elif $UPDATE; then
 	ask-prompt-setup || error "User cancelled"
 	download-driver || error "wget downloading file :: $DOWNLOAD_URI"
+else
+	exit 0
 fi
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
 compile-setup-args
 run-installer || error "Installation failed or user interupted"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
-check-versions && error "After all that your driver version didn't change!"
+check-result || error "After all that your driver version didn't change!"
 echo "Driver update successfull!"
 exit 0
