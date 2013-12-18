@@ -7,8 +7,8 @@ Copyright (c) 2013 Jon Retting
 - [GDC Webpage](http://jonretting.github.io/geforce-driver-check/)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-###[Latest Milestone v1.046 RC3](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
-####v1.046 RC3 NOTES:
+### [Latest Milestone v1.046 RC3](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+#### v1.046 RC3 NOTES:
 - CYGWIN 32-bit and 64-bit support
 - Force reinstall option [-R] with download validation checks
 - Properly detects host architecture and Windows version
