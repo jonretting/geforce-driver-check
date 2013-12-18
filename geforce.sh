@@ -290,9 +290,9 @@ get-deps-array() {
 check-deps() {
 	for i in "${DEPS[@]}"; do
 		case "$i" in
-			7z)	check-hash 7z || 7zip || error "Dependency not found :: $i"	;;
-		  wmic) check-hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH"	;;
-			 *)	check-hash "$i" || error "Dependency not found :: $i"	;;
+			wmic) check-hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH"	;;
+			  7z) check-hash 7z || 7zip || error "Dependency not found :: $i"	;;
+		  	   *) check-hash "$i" || error "Dependency not found :: $i"	;;
 		esac
 	done
 }
