@@ -19,24 +19,14 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.046"
+VERSION="1.046 RC3"
 
 # cutomizable defaults
 DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
 EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
 INTERNATIONAL=false		# true use international driver package version multi language support
-
 # remove these nvidia packages from driver install
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
-
-# default flags (change if you know what you are doing)
-SILENT=false
-YES_TO_ALL=false
-CHECK_ONLY=false
-ATTENDED=false
-CLEAN_INSTALL=false
-REINSTALL=false
-ENABLE_REBOOT_PROMPT=false
 
 usage() {
 	echo "Geforce Driver Check v${VERSION}
@@ -75,6 +65,15 @@ get-options() {
 			*) usage; exit 1				;;
 		esac
 	done
+}
+get-defaults() {
+	SILENT=false
+	YES_TO_ALL=false
+	CHECK_ONLY=false
+	ATTENDED=false
+	CLEAN_INSTALL=false
+	REINSTALL=false
+	ENABLE_REBOOT_PROMPT=false
 }
 ask() {
         while true; do
@@ -258,7 +257,6 @@ run-installer() {
 	check-path "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH"
 }
 7z-find() {
-	SEVEN_ZIP=
 	local PFILES="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files"
 	local FIND="$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
 	for i in "$FIND"; do
@@ -291,7 +289,7 @@ check-deps() {
 		esac
 	done
 }
-
+get-defaults
 get-options "$@" && shift $(($OPTIND-1))
 get-deps-array && check-deps
 check-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
