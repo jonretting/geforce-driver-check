@@ -25,6 +25,7 @@ VERSION="1.048 RC3"
 DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
 EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
 INTERNATIONAL=false		# true use international driver package version multi language support
+
 # remove these nvidia packages from driver install
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 
