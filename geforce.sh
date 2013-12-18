@@ -21,24 +21,23 @@
 #
 VERSION="1.046"
 
-get-defaults() {
-	# cutomizable defaults
-	DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
-	EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
-	INTERNATIONAL=false		# true use international driver package version multi language support
+# cutomizable defaults
+DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
+EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
+INTERNATIONAL=false		# true use international driver package version multi language support
 
-	# default vars
-	EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
+# remove these nvidia packages from driver install
+EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 
-	# default flags (change if you know what you are doing)
-	SILENT=false
-	YES_TO_ALL=false
-	CHECK_ONLY=false
-	ATTENDED=false
-	CLEAN_INSTALL=false
-	REINSTALL=false
-	ENABLE_REBOOT_PROMPT=false
-}
+# default flags (change if you know what you are doing)
+SILENT=false
+YES_TO_ALL=false
+CHECK_ONLY=false
+ATTENDED=false
+CLEAN_INSTALL=false
+REINSTALL=false
+ENABLE_REBOOT_PROMPT=false
+
 usage() {
 	echo "Geforce Driver Check v${VERSION}
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
@@ -57,12 +56,32 @@ Example: geforce.sh
 -V    Displays version info
 -h    this crupt"
 }
-ask() {
-	while true; do
-		[ "$2" ] && { local pmt="$2";local def=; }; [ "$2" ] || { local pmt="y/n";local def=; }
-		$YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
-		[ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
+get-options() {
+	local opts="asyd:cRVCAirh"
+	while getopts "$opts" OPTIONS; do
+		case "${OPTIONS}" in
+			a) ATTENDED=true				;;
+			s) SILENT=true					;;
+			y) YES_TO_ALL=true				;;
+			d) DOWNLOAD_PATH="$OPTARG"		;;
+			c) CLEAN_INSTALL=true			;;
+			R) REINSTALL=true				;;
+			V) echo "Version: $VERSION"; exit 0	;;
+			C) CHECK_ONLY=true				;;
+			A) ATTENDED=true; EXCLUDE_PKGS=	;;
+			i) INTERNATIONAL=true			;;
+			r) ENABLE_REBOOT_PROMPT=true	;;
+			h) usage; exit 0				;;
+			*) usage; exit 1				;;
+		esac
 	done
+}
+ask() {
+        while true; do
+                [ "$2" ] && { local pmt="$2";local def=; }; [ "$2" ] || { local pmt="y/n";local def=; }
+                $YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
+                [ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
+        done
 }
 error() {
 	echo -e "Error: geforce.sh : $1" | tee -a /var/log/messages
@@ -190,7 +209,7 @@ update-txt() {
 }
 ask-prompt-setup() {
 	local msg="Download, Extract, and Install new version"
-	ask "${msg} ( ${LATEST_VER_NAME} ) now?"
+	ask "$msg ( ${LATEST_VER_NAME} ) now?"
 }
 ask-reinstall() {
 	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?" || return 1
@@ -263,26 +282,6 @@ run-installer() {
 get-deps-array() {
 	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic')
 }
-get-options() {
-	local opts="asyd:cRVCAirh"
-	while getopts "$opts" OPTIONS; do
-		case "${OPTIONS}" in
-			a) ATTENDED=true				;;
-			s) SILENT=true					;;
-			y) YES_TO_ALL=true				;;
-			d) DOWNLOAD_PATH="$OPTARG"		;;
-			c) CLEAN_INSTALL=true			;;
-			R) REINSTALL=true				;;
-			V) echo "Version: $VERSION"; exit 0	;;
-			C) CHECK_ONLY=true				;;
-			A) ATTENDED=true; EXCLUDE_PKGS=	;;
-			i) INTERNATIONAL=true			;;
-			r) ENABLE_REBOOT_PROMPT=true	;;
-			h) usage; exit 0				;;
-			*) usage; exit 1				;;
-		esac
-	done
-}
 check-deps() {
 	for i in "${DEPS[@]}"; do
 		case "$i" in
@@ -293,10 +292,8 @@ check-deps() {
 	done
 }
 
-get-defaults
 get-options "$@" && shift $(($OPTIND-1))
-get-deps-array
-check-deps
+get-deps-array && check-deps
 check-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
 check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 check-windows-arch || error "Unsupported architecture :: $WINDOWS_ARCH"
