@@ -305,14 +305,20 @@ get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 $REINSTALL || check-versions
+INSTALLED_VER=33165
+INSTALLED_VER_NAME="331.65"
+UPDATE=true
 update-txt
 $UPDATE || exit 0
 $CHECK_ONLY && exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
-$REINSTALL || { ask-prompt-setup || error "User cancelled"; }
-$REINSTALL && { ask-reinstall || error "User cancelled"; }
-$REINSTALL || download-driver || error "wget downloading file :: $DOWNLOAD_URI"
+if $REINSTALL; then
+	ask-reinstall || error "User cancelled"
+else
+	ask-prompt-setup || error "User cancelled"
+	download-driver || error "wget downloading file :: $DOWNLOAD_URI"
+fi
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
 compile-setup-args
