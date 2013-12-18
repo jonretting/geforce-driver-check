@@ -294,9 +294,9 @@ check-deps() {
 }
 
 get-defaults
+get-options "$@" && shift $(($OPTIND-1))
 get-deps-array
 check-deps
-get-options "$@" && shift $(($OPTIND-1))
 check-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
 check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
 check-windows-arch || error "Unsupported architecture :: $WINDOWS_ARCH"
