@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.046 RC3"
+VERSION="1.047 RC3"
 
 # cutomizable defaults
 DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
@@ -204,7 +204,7 @@ check-versions() {
 update-txt() {
 	$REINSTALL && { echo "Installed verison: $INSTALLED_VER_NAME, re-installing: $LATEST_VER_NAME"; return 0; }
 	$UPDATE || echo "Already latest version: $INSTALLED_VER_NAME"
-	$UPDATE && echo "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
+	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
 }
 ask-prompt-setup() {
 	local msg="Download, Extract, and Install new version"
@@ -310,8 +310,8 @@ $UPDATE || exit 0
 $CHECK_ONLY && exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
-$REINSTALL || ask-prompt-setup || error "User cancelled"
-$REINSTALL && ask-reinstall || error "User cancelled"
+$REINSTALL || { ask-prompt-setup || error "User cancelled"; }
+$REINSTALL && { ask-reinstall || error "User cancelled"; }
 $REINSTALL || download-driver || error "wget downloading file :: $DOWNLOAD_URI"
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
