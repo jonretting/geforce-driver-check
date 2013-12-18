@@ -5,8 +5,16 @@ Copyright (c) 2013 Jon Retting
 
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC Webpage](http://jonretting.github.io/geforce-driver-check/)
-- [Latest Milestone v1.045 RC2](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-v1.045-RC2.zip/download)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
+
+###[Latest Milestone v1.046 RC3](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+####v1.046 RC3 NOTES:
+- CYGWIN 32-bit and 64-bit support
+- Force reinstall option [-R] with download validation checks
+- Properly detects host architecture and Windows version
+- Untested with multiple graphic adapter setups
+- User is prompted before new driver download and setup.exe execution
+- Supports non-admin account execution
 
 INFO:
 -----
@@ -21,11 +29,10 @@ INFO:
 - If 7zip is not found, GDC will prompt to download x64 msi, then prompt to attended or unattended install
 - Supports the international driver package version when "-i" is envoked
 - Only installs Display Driver, HD Audio, and PshyX
-- Prompts to install after downloading (no prompt, no progress when "-s" is envoked
-- Will install automatically, no interaction needed
+- User interaction required before download/install procedure (unless [-s] or [-y] is envoked)
 - Displays Nvidia installation progress box
-- Runs driver setup with all driver packages when "-A" is envoked enables "-a" aswell
-- You can check and see if a new version is available with "-C" won't prompt to download and continue
+- Runs driver setup with all driver packages when [-A] is envoked enables [-a] aswell
+- You can check and see if a new version is available with [-C] won't prompt to download and continue
 - Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver#"
 - The -r option will enable Nvidia driver installer to prompt user to reboot if needed (untested)
 
@@ -78,11 +85,11 @@ EXAMPLES:
 - create windows shortcuts to geforce.sh option, launch from windows bat file
 - add notification email switch when update is available
 - make crontab friendly
+- add long format options --re-install
 - correct handling of assorted nvidia graphics hardware
 - allow for other types ex: x86 version, only whql
 - add geforce inspector tool install options
 - add ntune o/c settings option show oc pane
-- add reinstallation options/force reinstall
 - maybe add NVIDIA Pixel Clock Patcher
 - add driver purge style installation, complete graphics driver removal
 - make readme not terrible
