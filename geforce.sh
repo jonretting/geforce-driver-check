@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.048 RC3"
+VERSION="1.048"
 
 # cutomizable defaults
 DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
@@ -119,13 +119,13 @@ check-os-ver() {
 	local WMIC="$(wmic os get version | grep -oE ^6\.[1-3]{1})"
 	local CYGW="$(uname -s | grep -oE 6\.[1-3]{1})"
 	OS_VERSION="Windows NT $CYGW"
-	[[ "$WMIC" == "$CYGW" ]]
+	[[ -n "$WMIC" && -n "$CYGW" && "$WMIC" == "$CYGW" ]]
 }
 check-windows-arch() {
 	local WMIC="$(wmic OS get OSArchitecture /value | grep -o '64-bit')"
 	local PATH="$(cd -P "$(cygpath -W)"; cd ../Program\ Files\ \(x86\) 2>/dev/null && echo "64-bit")"
 	WINDOWS_ARCH="$WMIC"
-	[[ "$WMIC" == "$PATH" ]]
+	[[ -n "$WMIC" && -n "$PATH" && "$WMIC" == "$PATH" ]]
 }
 get-username() {
 	local CYG_USER=$(whoami)
@@ -301,8 +301,8 @@ get-defaults
 get-options "$@" && shift $(($OPTIND-1))
 get-deps-array && check-deps
 check-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
-check-os-ver || error "Unsupported OS Version :: $OS_VERSION"
-check-windows-arch || error "Unsupported architecture :: $WINDOWS_ARCH"
+check-os-ver || error "Unsupported OS Version"
+check-windows-arch || error "Unsupported architecture"
 get-username || echo "Warning: could not retrieve current Windows username :: $USERNAME"
 get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
