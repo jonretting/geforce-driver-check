@@ -240,7 +240,7 @@ run-installer() {
 }
 7z-find() {
 	SEVEN_ZIP=
-	local PFILES=$(cygpath -wa "$PROGRAMFILES")
+	local PFILES="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files"
 	local FIND="$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
 	for i in "$FIND"; do
 		[[ -x "$i" ]] && check-hash "$i" && { SEVEN_ZIP="$i"; return 0; }
@@ -251,7 +251,7 @@ run-installer() {
 	local URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 	ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
 	get-download-path || { echo "error getting download path, try [-d /path]"; return 1; }
-	wget -N -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
+	wget -N --no-check-certificate -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
 	7z-find
 }
 7z-inst() {
