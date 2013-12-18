@@ -219,19 +219,14 @@ ask-prompt-setup() {
 	ask "$msg ( ${LATEST_VER_NAME} ) now?"
 }
 ask-reinstall() {
-	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?" || return 1
-	check-file "${DOWNLOAD_PATH}/$FILE_NAME" && validate-download && return 0
-	download-driver "again"
+	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?"
 }
 validate-download () {
-	echo -ne "Making sure previous archive size is valid..."
-	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/$FILE_NAME")
+	echo -ne "Making sure previously downloaded archive size is valid..."
+	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/$FILE_NAME" 2>/dev/null)
 	local rsize="$(wget --spider -qSO- 2>&1 "$DOWNLOAD_URI" | awk '/Length/ {print $2}')"
-	[[ $lsize -eq $rsize ]] || { echo "Failed"; sleep 2; download-driver "again"; }
+	[[ $lsize -eq $rsize ]] || { echo "Failed"; sleep 2; return 1; }
 	echo "Done"
-	verify-archive
-}
-verify-archive() {
 	echo "Testing archive integrity..."
 	7z t "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
 }
@@ -318,16 +313,17 @@ get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 check-versions
 update-txt
+$UPDATE || $REINSTALL || exit 0
 $CHECK_ONLY && exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
 if $REINSTALL; then
 	ask-reinstall || error "User cancelled"
+	check-file "${DOWNLOAD_PATH}/$FILE_NAME"
+	validate-download || download-driver "again" || error "wget downloading file :: $DOWNLOAD_URI"
 elif $UPDATE; then
 	ask-prompt-setup || error "User cancelled"
 	download-driver || error "wget downloading file :: $DOWNLOAD_URI"
-else
-	exit 0
 fi
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
