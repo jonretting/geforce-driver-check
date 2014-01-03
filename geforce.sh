@@ -19,12 +19,13 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.048"
+VERSION="1.048-1"
 
 # cutomizable defaults
 DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
 EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
 INTERNATIONAL=false		# true use international driver package version multi language support
+USER_AGENT="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0" #agent reported to Nvidia alt wget
 
 # remove these nvidia packages from driver install
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
@@ -159,12 +160,12 @@ get-download-path() {
 	check-path "$DOWNLOAD_PATH"
 }
 get-online-data() {
-	local DESKTOP_ID="95"
-	local NOTEBOOK_ID="92"
-	local LINK="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
-	$NOTEBOOK && local LINK+="$NOTEBOOK_ID" || local LINK+="$DESKTOP_ID"
+	local desktop_id="95"
+	local notebook_id="92"
+	local link="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
+	$NOTEBOOK && local link+="$notebook_id" || local link+="$desktop_id"
 	# needs refactor main web query
-	FILE_DATA=$(wget -qO- 2>/dev/null $(wget -qO- 2>/dev/null "$LINK" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
+	FILE_DATA=$(wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null $(wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null "$link" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
 	[[ "$FILE_DATA" == *.exe ]]
 }
 get-latest-name() {
@@ -191,7 +192,7 @@ get-adapter() {
 	return 0
 }
 check-uri() {
-	wget -t 1 -T 3 -q --spider "$1"
+	wget -U "$USER_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
 }
 create-driver-uri() {
 	[[ $1 -eq 1 ]] && get-online-data
@@ -225,7 +226,7 @@ ask-reinstall() {
 validate-download () {
 	echo -ne "Making sure previously downloaded archive size is valid..."
 	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/$FILE_NAME" 2>/dev/null)
-	local rsize="$(wget --spider -qSO- 2>&1 "$DOWNLOAD_URI" | awk '/Length/ {print $2}')"
+	local rsize="$(wget -U "$USER_AGENT" --no-cookies --spider -qSO- 2>&1 "$DOWNLOAD_URI" | awk '/Length/ {print $2}')"
 	[[ $lsize -eq $rsize ]] || { echo "Failed"; sleep 2; return 1; }
 	echo "Done"
 	echo "Testing archive integrity..."
@@ -234,7 +235,7 @@ validate-download () {
 download-driver() {
 	echo "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
 	[[ $1 == "again" ]] && rm -f "${DOWNLOAD_PATH}/${FILE_NAME}" || local opts='-N'
-	wget $opts -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
+	wget -U "$USER_AGENT" --no-cookies $opts -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
 }
 extract-package() {
 	echo -ne "Extracting new driver archive..."
@@ -276,7 +277,7 @@ check-result() {
 	local URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 	ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
 	get-download-path || { echo "error getting download path, try [-d /path]"; return 1; }
-	wget -N --no-check-certificate -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
+	wget -U "$USER_AGENT" --no-cookies -N --no-check-certificate -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
 	7z-find
 }
 7z-inst() {
