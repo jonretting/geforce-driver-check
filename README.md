@@ -7,7 +7,12 @@ Copyright (c) 2013 Jon Retting
 - [GDC Webpage](http://jonretting.github.io/geforce-driver-check/)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest Milestone v1.048 RC3](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.048-1](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+#### v1.048-1 NOTES:
+- better architecture and os version detection including fixes
+- added user agent to web data queries huge increase in speed upwards of twice as fast
+- fix non executable files having +x permissions
+
 #### v1.048 RC3 NOTES:
 - CYGWIN 32-bit and 64-bit support
 - Force reinstall option [-R] with download validation checks
@@ -21,18 +26,18 @@ INFO:
 -----
 - Requires CYGWIN
 - Currently supports only Windows 7 x64 and Windows 8 x64
-- Works with Desktop and Notebook Graphics adapaters
+- Works with Desktop and Notebook Graphics adapters
 - No configuration needed to run, simply bash the slut
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
-- Option to Force-Reinstall latest version will verify integrity of downloaded archive, and act acordingly
+- Option to Force-Reinstall latest version will verify integrity of downloaded archive, and act accordingly
 - Will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
 - If 7zip is not found, GDC will prompt to download x64 msi, then prompt to attended or unattended install
-- Supports the international driver package version when "-i" is envoked
+- Supports the international driver package version when "-i" is invoked
 - Only installs Display Driver, HD Audio, and PshyX
-- User interaction required before download/install procedure (unless [-s] or [-y] is envoked)
+- User interaction required before download/install procedure (unless [-s] or [-y] is invoked)
 - Displays Nvidia installation progress box
-- Runs driver setup with all driver packages when [-A] is envoked enables [-a] aswell
+- Runs driver setup with all driver packages when [-A] is invoked enables [-a] as well
 - You can check and see if a new version is available with [-C] won't prompt to download and continue
 - Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver#"
 - The -r option will enable Nvidia driver installer to prompt user to reboot if needed (untested)
@@ -45,15 +50,15 @@ OPTIONS:
 --------
 	geforce.sh [-asycCAirVh] [-d=/download/path]
 	-a    Attended install (user must traverse Nvidia setup GUI)
-	-s    Silent install (dont show Nvidia progress bar)
+	-s    Silent install (don’t show Nvidia progress bar)
 	-y    Answer 'yes' to all prompts
 	-c    Clean install (removes all saved profiles and settings)
 	-d    Specify download location
 	-C    Only check for new version (returns version#, 0=update available, 1=no update)
     -R    Force Reinstalls latest driver version (integrity checks on current installer package)
 	-A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
-	-i    Download international driver package (driver package for non English installs)
-	-r    Don't disable reboot prompt when reboot is needed (could be buged)
+	-i    Download international driver package (driver package for non-English installs)
+	-r    Don't disable reboot prompt when reboot is needed (could be bugged)
 	-V    Displays version info
 	-h    this crupt
 
@@ -84,7 +89,7 @@ EXAMPLES:
 
 ### TODO:
 - create windows shortcuts to geforce.sh option, launch from windows bat file
-- check if your card is compatable with latest drivers before going through to setup and nvidia telling you
+- check if your card is compatible with latest drivers before going through to setup and nvidia telling you
 - add notification email switch when update is available
 - make crontab friendly
 - add long format options --re-install
