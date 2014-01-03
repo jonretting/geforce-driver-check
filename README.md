@@ -84,6 +84,7 @@ EXAMPLES:
 
 ### TODO:
 - create windows shortcuts to geforce.sh option, launch from windows bat file
+- check if your card is compatable with latest drivers before going through to setup and nvidia telling you
 - add notification email switch when update is available
 - make crontab friendly
 - add long format options --re-install
