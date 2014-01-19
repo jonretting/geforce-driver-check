@@ -7,6 +7,13 @@ Copyright (c) 2013 Jon Retting
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
 ### [Latest v1.048-1](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+
+#### v1.048-2 NOTES:
+- proper detection of graphics card when non-nvidia card is present
+- checks for compatabile NVIDIA card early on
+- improved wmic installed driver information query
+- updated notebook devices db to latest 332.21
+
 #### v1.048-1 NOTES:
 - better architecture and os version detection including fixes
 - added user agent to web data queries huge increase in speed upwards of twice as fast
@@ -87,6 +94,7 @@ EXAMPLES:
 	`./geforce.sh -d "/home/me/Downloads" -s -y`
 
 ### TODO:
+- *make compatible with multiple  installed nvidia card environments
 - create windows shortcuts to geforce.sh option, launch from windows bat file
 - check if your card is compatible with latest drivers before going through to setup and nvidia telling you
 - add notification email switch when update is available
