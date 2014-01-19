@@ -95,6 +95,7 @@ EXAMPLES:
 
 ### TODO:
 - *make compatible with multiple  installed nvidia card environments
+- atempt to use registry as informational data fallback
 - create windows shortcuts to geforce.sh option, launch from windows bat file
 - check if your card is compatible with latest drivers before going through to setup and nvidia telling you
 - add notification email switch when update is available
