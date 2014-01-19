@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.048-1"
+VERSION="1.048-2"
 
 # cutomizable defaults
 DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
@@ -179,15 +179,19 @@ get-latest-ver() {
 	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
 	[[ $LATEST_VER =~ ^[0-9]+$ ]]
 }
+get-installed-data() {
+	INSTALLED_DATA="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d' )"
+	grep -q "NVIDIA" <<< "$INSTALLED_DATA"
+}
 get-installed-ver() {
-	INSTALLED_VER=$(wmic PATH Win32_VideoController GET DriverVersion | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')
+	INSTALLED_VER="$(echo "$INSTALLED_DATA" | awk -F"=" '/Version/ {print $2}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
 	INSTALLED_VER_NAME=$(echo $INSTALLED_VER | sed "s/./.&/4")
 	[[ $INSTALLED_VER =~ ^[0-9]+$ ]]
 }
 get-adapter() {
 	NOTEBOOK=false
-	VID_DESC=$(wmic PATH Win32_VideoController GET Description | grep "NVIDIA")
-	[[ "$VID_DESC" == NVIDIA* ]] || return 1
+	VID_DESC="$(echo "$INSTALLED_DATA" | awk -F"=" '/NVIDIA/ {print $2}')"
+	[[ "$VID_DESC" == NVIDIA* ]] || { echo "No NVIDIA Graphics Adapter detected"; return 1; }
 	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 	return 0
 }
@@ -255,6 +259,7 @@ run-installer() {
 	cygstart -w --action=runas "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
 }
 check-result() {
+	get-installed-data
 	get-installed-ver
 	[[ $INSTALLED_VER -eq $LATEST_VER ]]
 }
@@ -304,6 +309,7 @@ get-deps-array && check-deps
 check-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
 check-os-ver || error "Unsupported OS Version"
 check-windows-arch || error "Unsupported architecture"
+get-installed-data || error "did not find NVIDIA graphics adapter"
 get-username || echo "Warning: could not retrieve current Windows username :: $USERNAME"
 get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
