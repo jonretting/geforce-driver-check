@@ -22,31 +22,31 @@
 VERSION="1.049"
 
 # cutomizable defaults
-DOWNLOAD_PATH=			# download data path (overides default /cygdrive/sysdrive/Users/username/Downloads path, but not inline "-d /path")
+DOWNLOAD_PATH=			# download path (default=/cygdrive/sysdrive/Users/username/Downloads path) [-d "/path"] overrides
 EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
 INTERNATIONAL=false		# true use international driver package version multi language support
-USER_AGENT="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0" #agent reported to Nvidia alt wget
+USER_AGENT="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0" # agent reported to Nvidia alt wget
 
 # remove these nvidia packages from driver install
-EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
+EXCLUDED_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
 
 usage () {
-	echo "Geforce Driver Check ${VERSION}
-Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
-Usage: geforce.sh [-asycCAirVh] [-d=\"/download/path\"]
-Example: geforce.sh
--a    Attended install (user must traverse Nvidia setup GUI)
--s    Silent install (dont show Nvidia progress bar)
--y    Answer 'yes' to all prompts
--c    Clean install (removes all saved profiles and settings)
--R    Force re-install of latest driver
--d    Specify download location
--C    Only check for new version (returns version#, 0=update available, 1=no update)
--A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
--i    Download international driver package (driver package for non English installs)
--r    Don't disable reboot prompt when reboot is needed (could be buged)
--V    Displays version info
--h    this crupt"
+	echo " Geforce Driver Check ${VERSION}
+ Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
+ Usage: geforce.sh [-asycCAirVh] [-d=\"/download/path\"]
+ Example: geforce.sh
+ -a    Attended install (user must traverse Nvidia setup GUI)
+ -s    Silent install (dont show Nvidia progress bar)
+ -y    Answer 'yes' to all prompts
+ -c    Clean install (removes all saved profiles and settings)
+ -R    Force re-install of latest driver
+ -d    Specify download location
+ -C    Only check for new version (returns version#, 0=update available, 1=no update)
+ -A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
+ -i    Download international driver package (driver package for non English installs)
+ -r    Don't disable reboot prompt when reboot is needed (could be buged)
+ -V    Displays version info
+ -h    this crupt"
 }
 get-options () {
 	local opts="asyd:cRVCAirh"
@@ -58,7 +58,7 @@ get-options () {
 			d) DOWNLOAD_PATH="$OPTARG"		;;
 			c) CLEAN_INSTALL=true			;;
 			R) REINSTALL=true				;;
-			V) echo "Version: $VERSION"; exit 0	;;
+			V) echo "Version $VERSION"; exit 0	;;
 			C) CHECK_ONLY=true				;;
 			A) ATTENDED=true; EXCLUDE_PKGS=	;;
 			i) INTERNATIONAL=true			;;
@@ -95,7 +95,7 @@ check-hash () {
 }
 check-file () {
 	while [[ ${#} -gt 0 ]]; do
-		case $1 in
+		case "$1" in
 			x) [[ -x "$2" ]] || return 1 ;;
 			r) [[ -r "$2" ]] || return 1 ;;
 			s) [[ -s "$2" ]] || return 1 ;;
@@ -108,8 +108,9 @@ check-file () {
 	done
 }
 check-files () {
-	for i in $2; do
-		check-file $1 $i || return 1
+	local files="$2"; local opts="$1"
+	for file in $files; do
+		check-file "$opts" "$file" || return 1
 	done
 }
 check-path () {
@@ -124,20 +125,12 @@ check-cygwin () {
 check-os-ver () {
 	local wmic="$(wmic os get version | grep -oE ^6\.[1-3]{1})"
 	local cygw="$(uname -s | grep -oE 6\.[1-3]{1})"
-	OS_VERSION="Windows NT $cygw"
 	[[ -n "$wmic" && -n "$cygw" && "$wmic" == "$cygw" ]]
 }
 check-windows-arch () {
 	local wmic="$(wmic OS get OSArchitecture /value | grep -o '64-bit')"
 	local path="$(cd -P "$(cygpath -W)"; cd ../Program\ Files\ \(x86\) 2>/dev/null && echo "64-bit")"
-	WINDOWS_ARCH="$wmic"
 	[[ -n "$wmic" && -n "$path" && "$wmic" == "$path" ]]
-}
-get-username () {
-	local winuser="$USERNAME"
-	local cyguser="$(whoami)"
-	[[ -n "$winuser" ]] && GDC_USER="$winuser" || GDC_USER="$cyguser"
-	[[ -n "$GDC_USER" ]]
 }
 devices-archive () {
 	if ! check-files rs "${GDC_PATH}/devices_notebook.txt ${GDC_PATH}/devices_desktop.txt"; then
@@ -168,7 +161,7 @@ get-download-path () {
 	[[ -n "$SYSTEMDRIVE" ]] && check-path "$DOWNLOAD_PATH" && return 0
 	DOWNLOAD_PATH="$(cygpath -O | sed 's/Documents/Downloads/')"
 	check-path "$DOWNLOAD_PATH" && return 0
-	DOWNLOAD_PATH="${ROOT_PATH}/NVIDIA/Downloads"
+	DOWNLOAD_PATH="${EXTRACT_PREFIX}/Downloads"
 	check-mkdir "$DOWNLOAD_PATH" && return 0
 	DOWNLOAD_PATH="$(cd -P "$(cygpath -O)" && cd ../Downloads && pwd)"
 	check-path "$DOWNLOAD_PATH"
@@ -249,7 +242,7 @@ validate-download  () {
 	echo -ne "Making sure previously downloaded archive size is valid..."
 	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/${FILE_NAME}" 2>/dev/null)
 	local rsize="$(wget -U "$USER_AGENT" --no-cookies --spider -qSO- 2>&1 "$DOWNLOAD_URI" | awk '/Length/ {print $2}')"
-	[[ $lsize -eq $rsize ]] || { echo "Failed"; sleep 2; return 1; }
+	[[ "$lsize" -eq "$rsize" ]] || { echo "Failed"; sleep 2; return 1; }
 	echo "Done"
 	echo "Testing archive integrity..."
 	"$7Z" t "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
@@ -259,13 +252,18 @@ download-driver () {
 	[[ $1 == "again" ]] && rm -f "${DOWNLOAD_PATH}/${FILE_NAME}" || local opts='-N'
 	wget -U "$USER_AGENT" --no-cookies $opts -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
 }
-extract-package () {
-	echo -ne "Extracting new driver archive..."
-	SOURCE_ARCHIVE="$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
-	EXTRACT_PATH="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
-	"$SZ" x "$SOURCE_ARCHIVE" -o"$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null && echo "Done"
+get-excluded-pkgs () {
+	for pkg in "${EXCLUDED_PKGS[@]}"; do
+		echo -n "-xr!${pkg} "
+	done
 }
-compile-setup-args () {
+extract-pkg () {
+	echo -ne "Extracting new driver archive..."
+	local src="$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
+	local dest="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
+	"$SZ" x "$src" -o"$dest" get-excluded-pkgs >/dev/null && echo "Done"
+}
+comp-setup-args () {
 	SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 	$SILENT && SETUP_ARGS+=" -s"
 	$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
@@ -279,7 +277,7 @@ run-installer () {
 check-result () {
 	get-installed-data
 	get-installed-ver
-	[[ $INSTALLED_VER -eq $LATEST_VER ]]
+	[[ "$INSTALLED_VER" -eq "$LATEST_VER" ]]
 }
 7zip () {
 	7z-find || 7z-dl || return 1
@@ -289,46 +287,46 @@ check-result () {
 	check-path "$binpath" && ln -s "$SEVEN_ZIP" "$binpath"
 }
 7z-find () {
-	local PFILES="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files"
-	local FIND="$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
-	for i in "$FIND"; do
+	local pfiles="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files"
+	local find="$(find "$pfiles" "$pfiles (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
+	for i in "$find"; do
 		[[ -x "$i" ]] && check-hash "$i" && { SEVEN_ZIP="$i"; return 0; }
 	done
 	return 1
 }
 7z-dl () {
-	local URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
+	local url="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 	ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
 	get-download-path || { echo "error getting download path, try [-d /path]"; return 1; }
-	wget -U "$USER_AGENT" --no-cookies -N --no-check-certificate -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
+	wget -U "$USER_AGENT" --no-cookies -N --no-check-certificate -P "$DOWNLOAD_PATH" "$url" &&  7z-inst || return 1
 	7z-find
 }
 7z-inst () {
-	local MSIEXEC="$(cygpath -S)/msiexec.exe"
-	check-file x "$MSIEXEC" || return 1
-	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local PASSIVE="/passive"
-	cygstart -w --action=runas "$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
+	local msiexec="$(cygpath -S)/msiexec.exe"
+	check-file x "$msiexec" || return 1
+	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local passive="/passive"
+	cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
 }
 get-deps-array () {
 	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic' 'tar' 'gzip')
 }
 check-deps () {
-	for i in "${DEPS[@]}"; do
-		case "$i" in
+	get-deps-array
+	for dep in "${DEPS[@]}"; do
+		case "$dep" in
 			wmic) check-hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH" ;;
-			  7z) check-hash 7z && SZ="7z" || 7zip || error "Dependency not found :: $i" ;;
-		  	   *) check-hash "$i" || error "Dependency not found :: $i"	;;
+			  7z) check-hash 7z && SZ="7z" || 7zip || error "Dependency not found :: 7z (7-Zip)" ;;
+		  	   *) check-hash "$dep" || error "Dependency not found :: $dep"	;;
 		esac
 	done
 }
 get-defaults
 get-options "$@" && shift $(($OPTIND-1))
-get-deps-array && check-deps
+check-deps
 check-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
 check-os-ver || error "Unsupported OS Version"
 check-windows-arch || error "Unsupported architecture"
 get-installed-data || error "did not find NVIDIA graphics adapter"
-get-username || echo "Warning: could not retrieve current Windows username :: $USERNAME"
 get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
 get-download-path || error "validating download path :: $DOWNLOAD_PATH"
@@ -352,8 +350,8 @@ elif $UPDATE; then
 	download-driver || error "wget downloading file :: $DOWNLOAD_URI"
 fi
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
-extract-package || error "extracting new driver archive :: $SOURCE_ARCHIVE --> $EXTRACT_PATH"
-compile-setup-args
+extract-pkg || error "extracting new driver archive :: $EXTRACT_PREFIX"
+comp-setup-args
 run-installer || error "Installation failed or user interupted"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 check-result || error "After all that your driver version didn't change!"
