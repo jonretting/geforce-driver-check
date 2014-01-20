@@ -173,14 +173,17 @@ get-download-path () {
 	DOWNLOAD_PATH="$(cd -P "$(cygpath -O)" && cd ../Downloads && pwd)"
 	check-path "$DOWNLOAD_PATH"
 }
+get-wget () {
+	wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null "$1"
+}
 get-online-data () {
 	local desktop_id="95"
 	local notebook_id="92"
 	local link="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
 	$NOTEBOOK && local link+="$notebook_id" || local link+="$desktop_id"
-	local link="$(wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F"'" 'NR==1 {print $2}')"
-	FILE_DATA="$(wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null "$link" | awk 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
-	[[ "$FILE_DATA" == *.exe ]]
+	local link="$(get-wget "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F"'" 'NR==1 {print $2}')"
+	FILE_DATA="$(get-wget "$link" | awk 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
+	[[ "$FILE_DATA" == '/Windows/'*'.exe' ]]
 }
 get-latest-name () {
 	[[ "$1" -eq 1 ]] && get-online-data
@@ -214,11 +217,12 @@ check-uri () {
 }
 create-driver-uri () {
 	[[ $1 -eq 1 ]] && get-online-data
-	local downloadmirror="http://us.download.nvidia.com"
-	DOWNLOAD_URI="${downloadmirror}${FILE_DATA}"
-	$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
+	local url="http://us.download.nvidia.com"
+	DOWNLOAD_URI="${url}${FILE_DATA}"
+	$INTERNATIONAL && DOWNLOAD_URI=$(echo "$DOWNLOAD_URI" | sed -e "s/english/international/")
 	check-uri "$DOWNLOAD_URI"
 }
+
 check-versions () {
 	if [[ "$INSTALLED_VER" -lt "$LATEST_VER" ]]; then
 		UPDATE=true; REINSTALL=false
