@@ -6,7 +6,14 @@ Copyright (c) 2013 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.048-1](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.049](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+
+#### v1.049 NOTES:
+- various function optimizations
+- improve nvidia web query handling
+- increased exception handling for root paths and downloads path
+- added devices and notebook devices dbase files as tarball
+- verify adapter description again devices dbase, instead of just notebook detection
 
 #### v1.048-2 NOTES:
 - proper detection of graphics card when non-nvidia card is present
@@ -94,17 +101,15 @@ EXAMPLES:
 	`./geforce.sh -d "/home/me/Downloads" -s -y`
 
 ### TODO:
-- *make compatible with multiple  installed nvidia card environments
+- *make compatible with multiple installed nvidia card environments
+- correct handling of assorted nvidia graphics hardware
 - atempt to use registry as informational data fallback
 - create windows shortcuts to geforce.sh option, launch from windows bat file
-- check if your card is compatible with latest drivers before going through to setup and nvidia telling you
 - add notification email switch when update is available
 - make crontab friendly
 - add long format options --re-install
-- correct handling of assorted nvidia graphics hardware
 - allow for other types ex: x86 version, only whql
 - add geforce inspector tool install options
 - add ntune o/c settings option show oc pane
-- maybe add NVIDIA Pixel Clock Patcher
 - add driver purge style installation, complete graphics driver removal
 - make readme not terrible
