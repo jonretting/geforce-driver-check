@@ -24,7 +24,7 @@ VERSION="1.049"
 # cutomizable defaults
 DOWNLOAD_PATH=			# download path (default=/cygdrive/sysdrive/Users/username/Downloads path) [-d "/path"] overrides
 EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
-INTERNATIONAL=false		# true use international driver package version multi language support
+INTERNATIONAL=false		# use international driver package version multi language support
 USER_AGENT="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0" # agent reported to Nvidia alt wget
 
 # remove these nvidia packages from driver install
