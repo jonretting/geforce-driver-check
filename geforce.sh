@@ -215,7 +215,6 @@ create-driver-uri () {
 	$INTERNATIONAL && DOWNLOAD_URL=$(echo "$DOWNLOAD_URL" | sed -e "s/english/international/")
 	check-url "$DOWNLOAD_URL"
 }
-
 check-versions () {
 	if [[ "$INSTALLED_VER" -lt "$LATEST_VER" ]]; then
 		UPDATE=true; REINSTALL=false
@@ -224,6 +223,7 @@ check-versions () {
 	elif [[ "$INSTALLED_VER" -gt "$LATEST_VER" ]]; then
 		FAIL=true
 	fi
+	update-txt
 }
 update-txt () {
 	$FAIL && error "Your installed Version is somehow newer than NVIDIA latest version"
@@ -271,6 +271,7 @@ comp-setup-args () {
 	$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
 }
 run-installer () {
+	comp-setup-args
 	echo -ne "Executing installer setup..."
 	cygstart -w --action=runas "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
 }
@@ -336,7 +337,6 @@ get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 check-versions
-update-txt
 $UPDATE || $REINSTALL || exit 0
 $CHECK_ONLY && exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
@@ -351,7 +351,6 @@ elif $UPDATE; then
 fi
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-pkg || error "extracting new driver archive :: $EXTRACT_PREFIX"
-comp-setup-args
 run-installer || error "Installation failed or user interupted"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 check-result || error "After all that your driver version didn't change!"
