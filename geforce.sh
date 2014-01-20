@@ -49,6 +49,7 @@ usage () {
  -h    this crupt"
 }
 get-options () {
+	get-defaults
 	local opts="asyd:cRVCAirh"
 	while getopts "$opts" OPTIONS; do
 		case "${OPTIONS}" in
@@ -321,7 +322,6 @@ check-deps () {
 		esac
 	done
 }
-get-defaults
 get-options "$@" && shift $(($OPTIND-1))
 check-deps
 check-cygwin || error "Cygwin not detected :: $(uname -o)"
