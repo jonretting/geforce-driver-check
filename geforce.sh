@@ -19,10 +19,10 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.048-2"
+VERSION="1.049"
 
 # cutomizable defaults
-DOWNLOAD_PATH=			# download data path (overides default windows\user\download path, but not inline "-d /path")
+DOWNLOAD_PATH=			# download data path (overides default /cygdrive/sysdrive/Users/username/Downloads path, but not inline "-d /path")
 EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
 INTERNATIONAL=false		# true use international driver package version multi language support
 USER_AGENT="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0" #agent reported to Nvidia alt wget
@@ -30,7 +30,7 @@ USER_AGENT="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/
 # remove these nvidia packages from driver install
 EXCLUDE_PKGS="-xr!GFExperience* -xr!NV3DVision* -xr!Display.Update -xr!Display.Optimus -xr!MS.NET -xr!ShadowPlay -xr!LEDVisualizer -xr!NvVAD"
 
-usage() {
+usage () {
 	echo "Geforce Driver Check v${VERSION}
 Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
 Usage: geforce.sh [-asycCAirVh] [-d=\"/download/path\"]
@@ -48,7 +48,7 @@ Example: geforce.sh
 -V    Displays version info
 -h    this crupt"
 }
-get-options() {
+get-options () {
 	local opts="asyd:cRVCAirh"
 	while getopts "$opts" OPTIONS; do
 		case "${OPTIONS}" in
@@ -68,7 +68,7 @@ get-options() {
 		esac
 	done
 }
-get-defaults() {
+get-defaults () {
 	SILENT=false
 	YES_TO_ALL=false
 	CHECK_ONLY=false
@@ -79,21 +79,21 @@ get-defaults() {
 	UPDATE=false
 	FAIL=false
 }
-ask() {
+ask () {
 	while true; do
 		[ "$2" ] && { local pmt="$2";local def=; }; [ "$2" ] || { local pmt="y/n";local def=; }
 		$YES_TO_ALL && { local RPY=Y;local def=Y; }; [ -z "$def" ] && { echo -ne "$1 ";read -p "[$pmt] " RPY; }
 		[ -z "$RPY" ] && local RPY=$def; case "$RPY" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
 	done
 }
-error() {
+error () {
 	echo -e "Error: geforce.sh : $1" | tee -a /var/log/messages
 	exit 1
 }
-check-hash() {
+check-hash () {
 	hash "$1" 2>/dev/null
 }
-check-file() {
+check-file () {
 	while [[ ${#} -gt 0 ]]; do
 		case $1 in
 			x) [[ -x "$2" ]] || return 1 ;;
@@ -107,170 +107,184 @@ check-file() {
 		shift
 	done
 }
-check-path() {
+check-files () {
+	for i in $2; do
+		check-file $1 $i || return 1
+	done
+}
+check-path () {
 	check-file dr "$1"
 }
 check-mkdir () {
-	check-path "$1" || mkdir "$1"
+	check-path "$1" || mkdir -p "$1"
 }
-check-cygwin() {
+check-cygwin () {
 	[[ "$OSTYPE" == "cygwin" ]]
 }
-check-os-ver() {
-	local WMIC="$(wmic os get version | grep -oE ^6\.[1-3]{1})"
-	local CYGW="$(uname -s | grep -oE 6\.[1-3]{1})"
-	OS_VERSION="Windows NT $CYGW"
-	[[ -n "$WMIC" && -n "$CYGW" && "$WMIC" == "$CYGW" ]]
+check-os-ver () {
+	local wmic="$(wmic os get version | grep -oE ^6\.[1-3]{1})"
+	local cygw="$(uname -s | grep -oE 6\.[1-3]{1})"
+	OS_VERSION="Windows NT $cygw"
+	[[ -n "$wmic" && -n "$cygw" && "$wmic" == "$cygw" ]]
 }
-check-windows-arch() {
-	local WMIC="$(wmic OS get OSArchitecture /value | grep -o '64-bit')"
-	local PATH="$(cd -P "$(cygpath -W)"; cd ../Program\ Files\ \(x86\) 2>/dev/null && echo "64-bit")"
-	WINDOWS_ARCH="$WMIC"
-	[[ -n "$WMIC" && -n "$PATH" && "$WMIC" == "$PATH" ]]
+check-windows-arch () {
+	local wmic="$(wmic OS get OSArchitecture /value | grep -o '64-bit')"
+	local path="$(cd -P "$(cygpath -W)"; cd ../Program\ Files\ \(x86\) 2>/dev/null && echo "64-bit")"
+	WINDOWS_ARCH="$wmic"
+	[[ -n "$wmic" && -n "$path" && "$wmic" == "$path" ]]
 }
-get-username() {
-	local CYG_USER=$(whoami)
-	local WIN_USER="$USERNAME"
-	GDC_USER="$USERNAME"
+get-username () {
+	local winuser="$USERNAME"
+	local cyguser="$(whoami)"
+	[[ -n "$winuser" ]] && GDC_USER="$winuser" || GDC_USER="$cyguser"
 	[[ -n "$GDC_USER" ]]
 }
-devices-archive() {
-	gzip -dfc "${GDC_PATH}/devices_notebook.txt.gz" > "${GDC_PATH}/devices_notebook.txt" || return 1
-	check-file rs "${GDC_PATH}/devices_notebook.txt"
+devices-archive () {
+	if ! check-files rs "${GDC_PATH}/devices_notebook.txt ${GDC_PATH}/devices_desktop.txt"; then
+		tar xf "${GDC_PATH}/devices_dbase.tar.gz" -C "${GDC_PATH}"
+		check-files rs "${GDC_PATH}/devices_notebook.txt ${GDC_PATH}/devices_desktop.txt"
+	fi
 }
-get-gdc-path() {
-	local SOURCE="${BASH_SOURCE[0]}"
-	while [[ -h "$SOURCE" ]]; do
-		local DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-		local SOURCE="$(readlink "$SOURCE")"
-		[[ $SOURCE != /* ]] && local SOURCE="$DIR/$SOURCE"
-		let local C=C+1; [[ $C -gt 3 ]] && return 1
+get-gdc-path () {
+	local src="${BASH_SOURCE[0]}"
+	while [[ -h "$src" ]]; do
+		local dir="$(cd -P "$(dirname "$src")" && pwd)"
+		local src="$(readlink "$src")"
+		[[ $src != /* ]] && local src="$dir/$src"
+		let local c=c+1; [[ $c -gt 3 ]] && return 1
 	done
-	GDC_PATH="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+	GDC_PATH="$(cd -P "$(dirname "$src")" && pwd)"
 	check-path "$GDC_PATH"
 }
-get-root-path() {
-	[[ -n "$SYSTEMDRIVE" ]] && ROOT_PATH=$(cygpath "$SYSTEMDRIVE")
-	check-path "$ROOT_PATH" || ROOT_PATH="$(cd -P "$(cygpath -W)"; cd .. && pwd)"
-	check-path "$ROOT_PATH" || ROOT_PATH="$(which explorer.exe | sed 's/.Windows\/explorer\.exe//')"
+get-root-path () {
+	[[ -n "$SYSTEMDRIVE" ]] && ROOT_PATH="$(cygpath "$SYSTEMDRIVE")"
+	check-path "$ROOT_PATH" && return 0
+	ROOT_PATH="$(cd -P "$(cygpath -W)"; cd .. && pwd)"
+	check-path "$ROOT_PATH" && return 0
+	ROOT_PATH="$(which explorer.exe | sed 's/.Windows\/explorer\.exe//')"
+	check-path "$ROOT_PATH"
 }
-get-download-path() {
+get-download-path () {
+	[[ -n "$SYSTEMDRIVE" ]] && check-path "$DOWNLOAD_PATH" && return 0
+	DOWNLOAD_PATH="$(cygpath -O | sed 's/Documents/Downloads/')"
 	check-path "$DOWNLOAD_PATH" && return 0
+	DOWNLOAD_PATH="${ROOT_PATH}/NVIDIA/Downloads"
+	check-mkdir "$DOWNLOAD_PATH" && return 0
 	DOWNLOAD_PATH="$(cd -P "$(cygpath -O)" && cd ../Downloads && pwd)"
 	check-path "$DOWNLOAD_PATH"
 }
-get-online-data() {
+get-online-data () {
 	local desktop_id="95"
 	local notebook_id="92"
 	local link="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
 	$NOTEBOOK && local link+="$notebook_id" || local link+="$desktop_id"
-	# needs refactor main web query
-	FILE_DATA=$(wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null $(wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null "$link" | awk '/driverResults.aspx/ {print $4}' | cut -d "'" -f2 | head -n 1) | awk '/url=/ {print $2}' | cut -d '=' -f3 | cut -d '&' -f1)
+	local link="$(wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F"'" 'NR==1 {print $2}')"
+	FILE_DATA="$(wget -U "$USER_AGENT" --no-cookies -qO- 2>/dev/null "$link" | awk 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
 	[[ "$FILE_DATA" == *.exe ]]
 }
-get-latest-name() {
-	[[ $1 -eq 1 ]] && get-online-data
-	FILE_NAME=$(echo "$FILE_DATA" | cut -d '/' -f4)
+get-latest-name () {
+	[[ "$1" -eq 1 ]] && get-online-data
+	FILE_NAME="$(echo "$FILE_DATA" | cut -d '/' -f4)"
 	[[ "$FILE_NAME" == *.exe ]]
 }
-get-latest-ver() {
-	[[ $1 -eq 1 ]] && get-online-data
-	LATEST_VER=$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e "s/\.//")
-	LATEST_VER_NAME=$(echo $LATEST_VER| sed "s/./.&/4")
-	[[ $LATEST_VER =~ ^[0-9]+$ ]]
+get-latest-ver () {
+	[[ "$1" -eq 1 ]] && get-online-data
+	LATEST_VER="$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e 's/\.//')"
+	LATEST_VER_NAME="$(echo "$LATEST_VER" | sed "s/./.&/4")"
+	[[ "$LATEST_VER" =~ ^[0-9]+$ ]]
 }
-get-installed-data() {
-	INSTALLED_DATA="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d' )"
+get-installed-data () {
+	INSTALLED_DATA="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d')"
 	grep -q "NVIDIA" <<< "$INSTALLED_DATA"
 }
-get-installed-ver() {
+get-installed-ver () {
 	INSTALLED_VER="$(echo "$INSTALLED_DATA" | awk -F"=" '/Version/ {print $2}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
-	INSTALLED_VER_NAME=$(echo $INSTALLED_VER | sed "s/./.&/4")
-	[[ $INSTALLED_VER =~ ^[0-9]+$ ]]
+	INSTALLED_VER_NAME="$(echo "$INSTALLED_VER" | sed 's/./.&/4')"
+	[[ "$INSTALLED_VER" =~ ^[0-9]+$ ]]
 }
-get-adapter() {
+get-adapter () {
 	NOTEBOOK=false
 	VID_DESC="$(echo "$INSTALLED_DATA" | awk -F"=" '/NVIDIA/ {print $2}')"
 	[[ "$VID_DESC" == NVIDIA* ]] || { echo "No NVIDIA Graphics Adapter detected"; return 1; }
 	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
 	return 0
 }
-check-uri() {
+check-uri () {
 	wget -U "$USER_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
 }
-create-driver-uri() {
+create-driver-uri () {
 	[[ $1 -eq 1 ]] && get-online-data
-	local DOWNLOAD_MIRROR="http://us.download.nvidia.com"
-	DOWNLOAD_URI="${DOWNLOAD_MIRROR}${FILE_DATA}"
+	local downloadmirror="http://us.download.nvidia.com"
+	DOWNLOAD_URI="${downloadmirror}${FILE_DATA}"
 	$INTERNATIONAL && DOWNLOAD_URI=$(echo $DOWNLOAD_URI | sed -e "s/english/international/")
 	check-uri "$DOWNLOAD_URI"
 }
-check-versions() {
-	if [[ $INSTALLED_VER -lt $LATEST_VER ]]; then
+check-versions () {
+	if [[ "$INSTALLED_VER" -lt "$LATEST_VER" ]]; then
 		UPDATE=true; REINSTALL=false
-	elif $REINSTALL && [[ $INSTALLED_VER -eq $LATEST_VER ]]; then
+	elif $REINSTALL && [[ "$INSTALLED_VER" -eq "$LATEST_VER" ]]; then
 		REINSTALL=true
-	elif [[ $INSTALLED_VER -gt $LATEST_VER ]]; then
+	elif [[ "$INSTALLED_VER" -gt "$LATEST_VER" ]]; then
 		FAIL=true
 	fi
 }
-update-txt() {
+update-txt () {
 	$FAIL && error "Your installed Version is somehow newer than NVIDIA latest version"
 	$REINSTALL && echo "Installed verison: $INSTALLED_VER_NAME, re-installing: $LATEST_VER_NAME" && return 0
 	$UPDATE || echo "Already latest version: $INSTALLED_VER_NAME" 
 	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
 }
-ask-prompt-setup() {
+ask-prompt-setup () {
 	local msg="Download, Extract, and Install new version"
 	ask "$msg ( ${LATEST_VER_NAME} ) now?"
 }
-ask-reinstall() {
+ask-reinstall () {
 	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?"
 }
-validate-download () {
+validate-download  () {
 	echo -ne "Making sure previously downloaded archive size is valid..."
-	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/$FILE_NAME" 2>/dev/null)
+	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/${FILE_NAME}" 2>/dev/null)
 	local rsize="$(wget -U "$USER_AGENT" --no-cookies --spider -qSO- 2>&1 "$DOWNLOAD_URI" | awk '/Length/ {print $2}')"
 	[[ $lsize -eq $rsize ]] || { echo "Failed"; sleep 2; return 1; }
 	echo "Done"
 	echo "Testing archive integrity..."
-	7z t "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
+	"$7Z" t "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
 }
-download-driver() {
+download-driver () {
 	echo "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
 	[[ $1 == "again" ]] && rm -f "${DOWNLOAD_PATH}/${FILE_NAME}" || local opts='-N'
 	wget -U "$USER_AGENT" --no-cookies $opts -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
 }
-extract-package() {
+extract-package () {
 	echo -ne "Extracting new driver archive..."
 	SOURCE_ARCHIVE="$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
 	EXTRACT_PATH="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
-	7z x "$SOURCE_ARCHIVE" -o"$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null && echo "Done"
+	"$SZ" x "$SOURCE_ARCHIVE" -o"$EXTRACT_PATH" $EXCLUDE_PKGS >/dev/null && echo "Done"
 }
-compile-setup-args() {
+compile-setup-args () {
 	SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 	$SILENT && SETUP_ARGS+=" -s"
 	$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
 	$ATTENDED && SETUP_ARGS=
 	$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
 }
-run-installer() {
+run-installer () {
 	echo -ne "Executing installer setup..."
 	cygstart -w --action=runas "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
 }
-check-result() {
+check-result () {
 	get-installed-data
 	get-installed-ver
 	[[ $INSTALLED_VER -eq $LATEST_VER ]]
 }
-7zip() {
+7zip () {
 	7z-find || 7z-dl || return 1
-	[[ -z $SEVEN_ZIP ]] && error "can't find 7-Zip installation, please install 7-Zip."
-	ask "7z.exe found. Create symbolic link for 7-Zip?" || { USE_7Z_PATH=true; return 0; }
-	local BINPATH=$(which ln | sed -e "s/\/ln//")
-	check-path "$BINPATH" && ln -s "$SEVEN_ZIP" "$BINPATH"
+	[[ -z "$SEVEN_ZIP" ]] && error "can't find 7-Zip installation, please install 7-Zip."
+	ask "7z.exe found. Create symbolic link for 7-Zip?" || { SZ="$SEVEN_ZIP"; return 0; }
+	local binpath="$(dirname $(which ls))"
+	check-path "$binpath" && ln -s "$SEVEN_ZIP" "$binpath"
 }
-7z-find() {
+7z-find () {
 	local PFILES="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files"
 	local FIND="$(find "$PFILES" "$PFILES (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
 	for i in "$FIND"; do
@@ -278,27 +292,27 @@ check-result() {
 	done
 	return 1
 }
-7z-dl() {
+7z-dl () {
 	local URI="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
 	ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
 	get-download-path || { echo "error getting download path, try [-d /path]"; return 1; }
 	wget -U "$USER_AGENT" --no-cookies -N --no-check-certificate -P "$DOWNLOAD_PATH" "$URI" &&  7z-inst || return 1
 	7z-find
 }
-7z-inst() {
+7z-inst () {
 	local MSIEXEC="$(cygpath -S)/msiexec.exe"
 	check-file x "$MSIEXEC" || return 1
 	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local PASSIVE="/passive"
 	cygstart -w --action=runas "$MSIEXEC" $PASSIVE /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
 }
-get-deps-array() {
-	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic')
+get-deps-array () {
+	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic' 'tar' 'gzip')
 }
-check-deps() {
+check-deps () {
 	for i in "${DEPS[@]}"; do
 		case "$i" in
-			wmic) check-hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH"	;;
-			  7z) check-hash 7z || 7zip || error "Dependency not found :: $i"	;;
+			wmic) check-hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH" ;;
+			  7z) check-hash 7z && SZ="7z" || 7zip || error "Dependency not found :: $i" ;;
 		  	   *) check-hash "$i" || error "Dependency not found :: $i"	;;
 		esac
 	done
