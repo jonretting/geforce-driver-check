@@ -205,12 +205,9 @@ get-installed-ver () {
 get-adapter () {
 	NOTEBOOK=false
 	VID_DESC="$(echo "$INSTALLED_DATA" | awk -F"=" '/NVIDIA/ {print $2}')"
-	if [[ -n "$VID_DESC" ]]; then 
-		cat "${GDC_PATH}/devices_notebook.txt" | grep -wqs "$VID_DESC" && { NOTEBOOK=true; return 0; }
-		cat "${GDC_PATH}/devices_desktop.txt" | grep -wqs "$VID_DESC" || return 1
-	else
-		return 1
-	fi
+	[[ -z "$VID_DESC" ]] && return 1
+	cat "${GDC_PATH}/devices_notebook.txt" | grep -wqs "$VID_DESC" && { NOTEBOOK=true; return 0; }
+	cat "${GDC_PATH}/devices_desktop.txt" | grep -wqs "$VID_DESC" || return 1
 }
 check-uri () {
 	wget -U "$USER_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
