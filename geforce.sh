@@ -228,9 +228,9 @@ check-versions () {
 }
 update-txt () {
 	$FAIL && error "Your installed Version is somehow newer than NVIDIA latest version"
-	$REINSTALL && echo "Installed verison: $INSTALLED_VER_NAME, re-installing: $LATEST_VER_NAME" && return 0
-	$UPDATE || echo "Already latest version: $INSTALLED_VER_NAME" 
-	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest:  $LATEST_VER_NAME"
+	$REINSTALL && { echo "Installed verison: $INSTALLED_VER_NAME, re-installing: $LATEST_VER_NAME"; return 0; }
+	$UPDATE || { echo "Already latest version: $INSTALLED_VER_NAME"; return 0; }
+	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest: $LATEST_VER_NAME"
 }
 ask-prompt-setup () {
 	local msg="Download, Extract, and Install new version"
@@ -337,8 +337,8 @@ get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 check-versions
+$CHECK_ONLY && $UPDATE && exit 0 || exit 1
 $UPDATE || $REINSTALL || exit 0
-$CHECK_ONLY && exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URL"
 if $REINSTALL; then
