@@ -88,7 +88,7 @@ ask () {
 	done
 }
 error () {
-	echo -e "Error: geforce.sh : $1" | tee -a /var/log/messages
+	echo -e "$(date): Error: geforce.sh : $1" | tee -a /var/log/messages
 	exit 1
 }
 check-hash () {
