@@ -205,9 +205,12 @@ get-installed-ver () {
 get-adapter () {
 	NOTEBOOK=false
 	VID_DESC="$(echo "$INSTALLED_DATA" | awk -F"=" '/NVIDIA/ {print $2}')"
-	[[ "$VID_DESC" == NVIDIA* ]] || { echo "No NVIDIA Graphics Adapter detected"; return 1; }
-	[[ -n "$VID_DESC" ]] && cat "${GDC_PATH}/devices_notebook.txt" | grep -qs "$VID_DESC" && NOTEBOOK=true
-	return 0
+	if [[ -n "$VID_DESC" ]]; then 
+		cat "${GDC_PATH}/devices_notebook.txt" | grep -wqs "$VID_DESC" && { NOTEBOOK=true; return 0; }
+		cat "${GDC_PATH}/devices_desktop.txt" | grep -wqs "$VID_DESC" && || return 1
+	else
+		return 1
+	fi
 }
 check-uri () {
 	wget -U "$USER_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
@@ -329,7 +332,7 @@ get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
 get-download-path || error "validating download path :: $DOWNLOAD_PATH"
 devices-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
-get-adapter || error "is not nvidia adapter :: $VID_DESC"
+get-adapter || error "not Geforce drivers compatabile adapter :: $VID_DESC"
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
