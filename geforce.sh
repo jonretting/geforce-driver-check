@@ -324,7 +324,7 @@ check-deps () {
 get-defaults
 get-options "$@" && shift $(($OPTIND-1))
 check-deps
-check-cygwin || error "detecting Cygwin (uname -o) :: $CYGWIN"
+check-cygwin || error "Cygwin not detected :: $(uname -o)"
 check-os-ver || error "Unsupported OS Version"
 check-windows-arch || error "Unsupported architecture"
 get-installed-data || error "did not find NVIDIA graphics adapter"
