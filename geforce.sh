@@ -205,15 +205,15 @@ get-adapter () {
 	cat "${GDC_PATH}/devices_notebook.txt" | grep -wqs "$VID_DESC" && { NOTEBOOK=true; return 0; }
 	cat "${GDC_PATH}/devices_desktop.txt" | grep -wqs "$VID_DESC" || return 1
 }
-check-uri () {
+check-url () {
 	wget -U "$USER_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
 }
 create-driver-uri () {
 	[[ $1 -eq 1 ]] && get-online-data
 	local url="http://us.download.nvidia.com"
-	DOWNLOAD_URI="${url}${FILE_DATA}"
-	$INTERNATIONAL && DOWNLOAD_URI=$(echo "$DOWNLOAD_URI" | sed -e "s/english/international/")
-	check-uri "$DOWNLOAD_URI"
+	DOWNLOAD_URL="${url}${FILE_DATA}"
+	$INTERNATIONAL && DOWNLOAD_URL=$(echo "$DOWNLOAD_URL" | sed -e "s/english/international/")
+	check-url "$DOWNLOAD_URL"
 }
 
 check-versions () {
@@ -241,7 +241,7 @@ ask-reinstall () {
 validate-download  () {
 	echo -ne "Making sure previously downloaded archive size is valid..."
 	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/${FILE_NAME}" 2>/dev/null)
-	local rsize="$(wget -U "$USER_AGENT" --no-cookies --spider -qSO- 2>&1 "$DOWNLOAD_URI" | awk '/Length/ {print $2}')"
+	local rsize="$(wget -U "$USER_AGENT" --no-cookies --spider -qSO- 2>&1 "$DOWNLOAD_URL" | awk '/Length/ {print $2}')"
 	[[ "$lsize" -eq "$rsize" ]] || { echo "Failed"; sleep 2; return 1; }
 	echo "Done"
 	echo "Testing archive integrity..."
@@ -250,7 +250,7 @@ validate-download  () {
 download-driver () {
 	echo "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
 	[[ $1 == "again" ]] && rm -f "${DOWNLOAD_PATH}/${FILE_NAME}" || local opts='-N'
-	wget -U "$USER_AGENT" --no-cookies $opts -P "$DOWNLOAD_PATH" "$DOWNLOAD_URI"
+	wget -U "$USER_AGENT" --no-cookies $opts -P "$DOWNLOAD_PATH" "$DOWNLOAD_URL"
 }
 get-excluded-pkgs () {
 	for pkg in "${EXCLUDED_PKGS[@]}"; do
@@ -340,14 +340,14 @@ update-txt
 $UPDATE || $REINSTALL || exit 0
 $CHECK_ONLY && exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
-create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URI"
+create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URL"
 if $REINSTALL; then
 	ask-reinstall || error "User cancelled"
 	check-file "${DOWNLOAD_PATH}/$FILE_NAME"
-	validate-download || download-driver "again" || error "wget downloading file :: $DOWNLOAD_URI"
+	validate-download || download-driver "again" || error "wget downloading file :: $DOWNLOAD_URL"
 elif $UPDATE; then
 	ask-prompt-setup || error "User cancelled"
-	download-driver || error "wget downloading file :: $DOWNLOAD_URI"
+	download-driver || error "wget downloading file :: $DOWNLOAD_URL"
 fi
 check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
 extract-pkg || error "extracting new driver archive :: $EXTRACT_PREFIX"
