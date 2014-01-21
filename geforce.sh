@@ -53,19 +53,19 @@ get-options () {
 	local opts="asyd:cRVCAirh"
 	while getopts "$opts" OPTIONS; do
 		case "${OPTIONS}" in
-			a) ATTENDED=true				;;
-			s) SILENT=true					;;
-			y) YES_TO_ALL=true				;;
-			d) DOWNLOAD_PATH="$OPTARG"		;;
-			c) CLEAN_INSTALL=true			;;
-			R) REINSTALL=true				;;
-			V) echo "Version $VERSION"; exit 0	;;
-			C) CHECK_ONLY=true				;;
-			A) ATTENDED=true; EXCLUDE_PKGS=	;;
-			i) INTERNATIONAL=true			;;
-			r) ENABLE_REBOOT_PROMPT=true	;;
-			h) usage; exit 0				;;
-			*) usage; exit 1				;;
+			a) ATTENDED=true ;;
+			s) SILENT=true ;;
+			y) YES_TO_ALL=true ;;
+			d) DOWNLOAD_PATH="$OPTARG" ;;
+			c) CLEAN_INSTALL=true ;;
+			R) REINSTALL=true ;;
+			V) echo "Version $VERSION"; exit 0 ;;
+			C) CHECK_ONLY=true ;;
+			A) ATTENDED=true; EXCLUDE_PKGS= ;;
+			i) INTERNATIONAL=true ;;
+			r) ENABLE_REBOOT_PROMPT=true ;;
+			h) usage; exit 0 ;;
+			*) usage; exit 1 ;;
 		esac
 	done
 }
