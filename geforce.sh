@@ -175,7 +175,7 @@ get-online-data () {
 	local notebook_id="92"
 	local link="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
 	$NOTEBOOK && local link+="$notebook_id" || local link+="$desktop_id"
-	local link="$(get-wget "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F"'" 'NR==1 {print $2}')"
+	local link="$(get-wget "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F\' 'NR==1 {print $2}')"
 	FILE_DATA="$(get-wget "$link" | awk 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
 	[[ "$FILE_DATA" == '/Windows/'*'.exe' ]]
 }
