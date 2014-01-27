@@ -31,7 +31,7 @@ USER_AGENT="${USER_AGENT:-Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/201
 EXCLUDED_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
 
 usage () {
-	echo " Geforce Driver Check ${VERSION}
+	echo " Geforce Driver Check $VERSION
  Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
  Usage: geforce.sh [-asycCAirVh] [-d=\"/download/path\"]
  Example: geforce.sh
@@ -52,7 +52,7 @@ get-options () {
 	get-defaults
 	local opts="asyd:cRVCAirh"
 	while getopts "$opts" OPTIONS; do
-		case "${OPTIONS}" in
+		case "$OPTIONS" in
 			a) ATTENDED=true ;;
 			s) SILENT=true ;;
 			y) YES_TO_ALL=true ;;
@@ -134,13 +134,13 @@ check-windows-arch () {
 	[[ -n "$wmic" && -n "$path" && "$wmic" == "$path" ]]
 }
 devices-archive () {
-	if ! check-files rs "${GDC_PATH}/devices_notebook.txt ${GDC_PATH}/devices_desktop.txt"; then
-		tar xf "${GDC_PATH}/devices_dbase.tar.gz" -C "${GDC_PATH}"
-		check-files rs "${GDC_PATH}/devices_notebook.txt ${GDC_PATH}/devices_desktop.txt"
+	if ! check-files rs "$GDC_PATH/devices_notebook.txt $GDC_PATH/devices_desktop.txt"; then
+		tar xf "$GDC_PATH/devices_dbase.tar.gz" -C "$GDC_PATH"
+		check-files rs "$GDC_PATH/devices_notebook.txt $GDC_PATH/devices_desktop.txt"
 	fi
 }
 get-gdc-path () {
-	local src="${BASH_SOURCE[0]}"
+	local src="$BASH_SOURCE"
 	while [[ -h "$src" ]]; do
 		local dir="$(cd -P "$(dirname "$src")" && pwd)"
 		local src="$(readlink "$src")"
@@ -162,7 +162,7 @@ get-download-path () {
 	[[ -n "$SYSTEMDRIVE" ]] && check-path "$DOWNLOAD_PATH" && return 0
 	DOWNLOAD_PATH="$(cygpath -O | sed 's/Documents/Downloads/')"
 	check-path "$DOWNLOAD_PATH" && return 0
-	DOWNLOAD_PATH="${EXTRACT_PREFIX}/Downloads"
+	DOWNLOAD_PATH="$EXTRACT_PREFIX/Downloads"
 	check-mkdir "$DOWNLOAD_PATH" && return 0
 	DOWNLOAD_PATH="$(cd -P "$(cygpath -O)" && cd ../Downloads && pwd)"
 	check-path "$DOWNLOAD_PATH"
@@ -205,8 +205,8 @@ get-adapter () {
 	NOTEBOOK=false
 	VID_DESC="$(echo "$INSTALLED_DATA" | awk -F\= '/NVIDIA/ {print $2}')"
 	[[ -z "$VID_DESC" ]] && return 1
-	cat "${GDC_PATH}/devices_notebook.txt" | grep -wqs "$VID_DESC" && { NOTEBOOK=true; return 0; }
-	cat "${GDC_PATH}/devices_desktop.txt" | grep -wqs "$VID_DESC" || return 1
+	cat "$GDC_PATH/devices_notebook.txt" | grep -wqs "$VID_DESC" && { NOTEBOOK=true; return 0; }
+	cat "$GDC_PATH/devices_desktop.txt" | grep -wqs "$VID_DESC" || return 1
 }
 check-url () {
 	wget -U "$USER_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
@@ -214,7 +214,7 @@ check-url () {
 create-driver-uri () {
 	[[ "$1" == true ]] && get-online-data
 	local url="http://us.download.nvidia.com"
-	DOWNLOAD_URL="${url}${FILE_DATA}"
+	DOWNLOAD_URL="$url$FILE_DATA"
 	$INTERNATIONAL && DOWNLOAD_URL="$(echo $DOWNLOAD_URL | sed -e 's/english/international/')"
 	check-url "$DOWNLOAD_URL"
 }
@@ -239,16 +239,16 @@ ask-prompt-setup () {
 	ask "$msg ( $LATEST_VER_NAME ) now?"
 }
 ask-reinstall () {
-	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?"
+	ask "Are you sure you would like to re-install version: $LATEST_VER_NAME?"
 }
 validate-download  () {
 	echo -ne "Making sure previously downloaded archive size is valid..."
-	local lsize="$(stat -c %s "${DOWNLOAD_PATH}/${FILE_NAME}" 2>/dev/null)"
+	local lsize="$(stat -c %s "$DOWNLOAD_PATH/$FILE_NAME" 2>/dev/null)"
 	local rsize="$(wget -U "$USER_AGENT" --no-cookies --spider -qSO- 2>&1 "$DOWNLOAD_URL" | awk '/Length/ {print $2}')"
 	[[ "$lsize" -eq "$rsize" ]] || { echo "Failed"; sleep 2; return 1; }
 	echo "Done"
 	echo "Testing archive integrity..."
-	"$7Z" t "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
+	"$7Z" t "$(cygpath -wa "$DOWNLOAD_PATH/$FILE_NAME")"
 }
 download-driver () {
 	echo "Downloading latest version into \"$DOWNLOAD_PATH\"..."
@@ -262,8 +262,8 @@ get-excluded-pkgs () {
 }
 extract-pkg () {
 	echo -ne "Extracting new driver archive..."
-	local src="$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
-	local dest="${EXTRACT_PREFIX}\GDC-${LATEST_VER_NAME}-$(date +%m%y%S)"
+	local src="$(cygpath -wa "$DOWNLOAD_PATH/$FILE_NAME")"
+	local dest="$EXTRACT_PREFIX\GDC-$LATEST_VER_NAME-$(date +%m%y%S)"
 	"$SZ" x "$src" -o"$dest" get-excluded-pkgs >/dev/null && echo "Done"
 }
 comp-setup-args () {
@@ -276,7 +276,7 @@ comp-setup-args () {
 run-installer () {
 	comp-setup-args
 	echo -ne "Executing installer setup..."
-	cygstart -w --action=runas "${EXTRACT_PATH}/setup.exe" "$SETUP_ARGS" && echo "Done"
+	cygstart -w --action=runas "$EXTRACT_PATH/setup.exe" "$SETUP_ARGS" && echo "Done"
 }
 check-result () {
 	get-installed-data
