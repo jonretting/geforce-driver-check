@@ -2,6 +2,21 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.05 :
+- fix check only exit condition
+- use environments globals for defaults first, if exist and not empty
+- use more bash builtins over sub shell executions
+- various code cleanups
+- allow data parse/store functions to call parent query function on demand
+- add GDC icons arhive for future links/shortcuts
+
+#### 1.049 :
+- various function optimizations
+- improve nvidia web query handling
+- increased exception handling for root paths and downloads path
+- added devices and notebook devices dbase files as tarball
+- verify adapter description again devices dbase, instead of just notebook detection
+
 #### 1.048-2 :
 - proper detection of graphics card when non-nvidia card is present
 - checks for compatabile NVIDIA card early on
