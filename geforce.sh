@@ -21,11 +21,11 @@
 #
 VERSION="1.049"
 
-# cutomizable defaults
-DOWNLOAD_PATH=			# download path (default=/cygdrive/sysdrive/Users/username/Downloads path) [-d "/path"] overrides
-EXTRACT_PREFIX="${SYSTEMDRIVE}\NVIDIA" # extract driver file here use WIN/DOS path
-INTERNATIONAL=false		# use international driver package version multi language support
-USER_AGENT="Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0" # agent reported to Nvidia alt wget
+# cutomizable defaults (respects environment defined vars) inline cmd over-rides both
+DOWNLOAD_PATH="${DOWNLOAD_PATH:=}"	# download path ex: DOWNLOAD_PATH="${DOWNLOAD_PATH:=/this/download/path}"
+EXTRACT_PREFIX="${EXTRACT_PREFIX:-$SYSTEMDRIVE\NVIDIA}" # extract driver file here use WIN/DOS path
+${INTERNATIONAL:-false}	# use international driver package version multi language support
+USER_AGENT="${USER_AGENT:-Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0}"	# agent passed to wget
 
 # remove these nvidia packages from driver install
 EXCLUDED_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
@@ -180,14 +180,14 @@ get-online-data () {
 	[[ "$FILE_DATA" == '/Windows/'*'.exe' ]]
 }
 get-latest-name () {
-	[[ "$1" -eq 1 ]] && get-online-data
-	FILE_NAME="$(echo "$FILE_DATA" | cut -d '/' -f4)"
+	[[ "$1" == true ]] && get-online-data
+	FILE_NAME="$(echo ${FILE_DATA##/*/})"
 	[[ "$FILE_NAME" == *.exe ]]
 }
 get-latest-ver () {
-	[[ "$1" -eq 1 ]] && get-online-data
-	LATEST_VER="$(echo "$FILE_DATA" | cut -d '/' -f3 | sed -e 's/\.//')"
-	LATEST_VER_NAME="$(echo "$LATEST_VER" | sed "s/./.&/4")"
+	[[ "$1" == true ]] && get-online-data
+	LATEST_VER_NAME="$(echo $FILE_DATA | cut -d\/ -f3)"
+	LATEST_VER="$(echo ${LATEST_VER_NAME//\./})"
 	[[ "$LATEST_VER" =~ ^[0-9]+$ ]]
 }
 get-installed-data () {
@@ -195,13 +195,15 @@ get-installed-data () {
 	grep -q "NVIDIA" <<< "$INSTALLED_DATA"
 }
 get-installed-ver () {
-	INSTALLED_VER="$(echo "$INSTALLED_DATA" | awk -F"=" '/Version/ {print $2}' | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
-	INSTALLED_VER_NAME="$(echo "$INSTALLED_VER" | sed 's/./.&/4')"
+	[[ "$1" == true ]] && get-installed-data
+	INSTALLED_VER="$(echo ${INSTALLED_DATA##*=} | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
+	INSTALLED_VER_NAME="$(echo $INSTALLED_VER | sed 's/./.&/4')"
 	[[ "$INSTALLED_VER" =~ ^[0-9]+$ ]]
 }
 get-adapter () {
+	[[ "$1" == true ]] && get-installed-data
 	NOTEBOOK=false
-	VID_DESC="$(echo "$INSTALLED_DATA" | awk -F"=" '/NVIDIA/ {print $2}')"
+	VID_DESC="$(echo "$INSTALLED_DATA" | awk -F\= '/NVIDIA/ {print $2}')"
 	[[ -z "$VID_DESC" ]] && return 1
 	cat "${GDC_PATH}/devices_notebook.txt" | grep -wqs "$VID_DESC" && { NOTEBOOK=true; return 0; }
 	cat "${GDC_PATH}/devices_desktop.txt" | grep -wqs "$VID_DESC" || return 1
@@ -210,10 +212,10 @@ check-url () {
 	wget -U "$USER_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
 }
 create-driver-uri () {
-	[[ $1 -eq 1 ]] && get-online-data
+	[[ "$1" == true ]] && get-online-data
 	local url="http://us.download.nvidia.com"
 	DOWNLOAD_URL="${url}${FILE_DATA}"
-	$INTERNATIONAL && DOWNLOAD_URL=$(echo "$DOWNLOAD_URL" | sed -e "s/english/international/")
+	$INTERNATIONAL && DOWNLOAD_URL="$(echo $DOWNLOAD_URL | sed -e 's/english/international/')"
 	check-url "$DOWNLOAD_URL"
 }
 check-versions () {
@@ -234,14 +236,14 @@ update-txt () {
 }
 ask-prompt-setup () {
 	local msg="Download, Extract, and Install new version"
-	ask "$msg ( ${LATEST_VER_NAME} ) now?"
+	ask "$msg ( $LATEST_VER_NAME ) now?"
 }
 ask-reinstall () {
 	ask "Are you sure you would like to re-install version: ${LATEST_VER_NAME}?"
 }
 validate-download  () {
 	echo -ne "Making sure previously downloaded archive size is valid..."
-	local lsize=$(stat -c %s "${DOWNLOAD_PATH}/${FILE_NAME}" 2>/dev/null)
+	local lsize="$(stat -c %s "${DOWNLOAD_PATH}/${FILE_NAME}" 2>/dev/null)"
 	local rsize="$(wget -U "$USER_AGENT" --no-cookies --spider -qSO- 2>&1 "$DOWNLOAD_URL" | awk '/Length/ {print $2}')"
 	[[ "$lsize" -eq "$rsize" ]] || { echo "Failed"; sleep 2; return 1; }
 	echo "Done"
@@ -249,13 +251,13 @@ validate-download  () {
 	"$7Z" t "$(cygpath -wa "${DOWNLOAD_PATH}/${FILE_NAME}")"
 }
 download-driver () {
-	echo "Downloading latest version into \"${DOWNLOAD_PATH}\"..."
-	[[ $1 == "again" ]] && rm -f "${DOWNLOAD_PATH}/${FILE_NAME}" || local opts='-N'
+	echo "Downloading latest version into \"$DOWNLOAD_PATH\"..."
+	[[ "$1" ]] && rm -f "$DOWNLOAD_PATH/$FILE_NAME" || local opts='-N'
 	wget -U "$USER_AGENT" --no-cookies $opts -P "$DOWNLOAD_PATH" "$DOWNLOAD_URL"
 }
 get-excluded-pkgs () {
 	for pkg in "${EXCLUDED_PKGS[@]}"; do
-		echo -n "-xr!${pkg} "
+		echo -n "-xr!$pkg "
 	done
 }
 extract-pkg () {
@@ -307,7 +309,7 @@ check-result () {
 	local msiexec="$(cygpath -S)/msiexec.exe"
 	check-file x "$msiexec" || return 1
 	ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local passive="/passive"
-	cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "${DOWNLOAD_PATH}/7z922-x64.msi")" || return 1
+	cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "$DOWNLOAD_PATH/7z922-x64.msi")" || return 1
 }
 get-deps-array () {
 	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic' 'tar' 'gzip')
@@ -316,7 +318,7 @@ check-deps () {
 	get-deps-array
 	for dep in "${DEPS[@]}"; do
 		case "$dep" in
-			wmic) check-hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH" ;;
+			wmic) check-hash wmic || PATH="$PATH:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH" ;;
 			  7z) check-hash 7z && SZ="7z" || 7zip || error "Dependency not found :: 7z (7-Zip)" ;;
 		  	   *) check-hash "$dep" || error "Dependency not found :: $dep"	;;
 		esac
@@ -331,28 +333,28 @@ get-installed-data || error "did not find NVIDIA graphics adapter"
 get-gdc-path || error "validating scripts execution path :: $GDC_PATH"
 get-root-path || error "validating root path :: $ROOT_PATH"
 get-download-path || error "validating download path :: $DOWNLOAD_PATH"
-devices-archive || error "validating devices dbase :: ${GDC_PATH}/devices_notebook.txt"
+devices-archive || error "validating devices dbase :: $GDC_PATH/devices_notebook.txt"
 get-adapter || error "not Geforce drivers compatabile adapter :: $VID_DESC"
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
 check-versions
-$CHECK_ONLY && $UPDATE && exit 0 || exit 1
+$CHECK_ONLY && { $UPDATE && exit 0 || exit 1; }
 $UPDATE || $REINSTALL || exit 0
 get-latest-name || error "invalid file name returned :: $FILE_NAME"
 create-driver-uri || error "validating driver download uri :: $DOWNLOAD_URL"
 if $REINSTALL; then
 	ask-reinstall || error "User cancelled"
-	check-file "${DOWNLOAD_PATH}/$FILE_NAME"
-	validate-download || download-driver "again" || error "wget downloading file :: $DOWNLOAD_URL"
+	check-file "$DOWNLOAD_PATH/$FILE_NAME"
+	validate-download || download-driver true || error "wget downloading file :: $DOWNLOAD_URL"
 elif $UPDATE; then
 	ask-prompt-setup || error "User cancelled"
 	download-driver || error "wget downloading file :: $DOWNLOAD_URL"
 fi
-check-mkdir "${ROOT_PATH}/NVIDIA" || error "creating path :: ${ROOT_PATH}/NVIDIA"
+check-mkdir "$ROOT_PATH/NVIDIA" || error "creating path :: $ROOT_PATH/NVIDIA"
 extract-pkg || error "extracting new driver archive :: $EXTRACT_PREFIX"
 run-installer || error "Installation failed or user interupted"
-get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
+get-installed-ver true || error "invalid driver version string :: $INSTALLED_VER"
 check-result || error "After all that your driver version didn't change!"
 echo "Driver update successfull!"
 exit 0
