@@ -338,7 +338,6 @@ get-adapter || error "not Geforce drivers compatabile adapter :: $VID_DESC"
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
-UPDATE=true
 check-versions
 $CHECK_ONLY && { $UPDATE && exit 0 || exit 1; }
 $UPDATE || $REINSTALL || exit 0
