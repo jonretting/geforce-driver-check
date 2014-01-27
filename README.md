@@ -8,34 +8,33 @@ Copyright (c) 2013 Jon Retting
 
 ### [Latest v1.049](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
-RELEASE NOTES:
---------------
-#### v1.05 :
+###RELEASE NOTES:
+#### 1.05 :
 - fix check only exit condition
 - use environments globals for defaults first, if exist and not empty
 - use more bash builtins over sub shell executions
 - various code cleanups
 - allow data parse/store functions to call parent query function on demand
 
-#### v1.049 :
+#### 1.049 :
 - various function optimizations
 - improve nvidia web query handling
 - increased exception handling for root paths and downloads path
 - added devices and notebook devices dbase files as tarball
 - verify adapter description again devices dbase, instead of just notebook detection
 
-#### v1.048-2 :
+#### 1.048-2 :
 - proper detection of graphics card when non-nvidia card is present
 - checks for compatabile NVIDIA card early on
 - improved wmic installed driver information query
 - updated notebook devices db to latest 332.21
 
-#### v1.048-1 :
+#### 1.048-1 :
 - better architecture and os version detection including fixes
 - added user agent to web data queries huge increase in speed upwards of twice as fast
 - fix non executable files having +x permissions
 
-#### v1.048 RC3 :
+#### 1.048 RC3 :
 - CYGWIN 32-bit and 64-bit support
 - Force reinstall option [-R] with download validation checks
 - Properly detects host architecture and Windows version
