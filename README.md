@@ -8,7 +8,7 @@ Copyright (c) 2013 Jon Retting
 
 ### [Latest v1.05](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
-### RELEASE NOTES:
+### Release Notes:
 
 #### 1.05 :
 - fix check only exit condition
