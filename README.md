@@ -16,6 +16,7 @@ Copyright (c) 2013 Jon Retting
 - use more bash builtins over sub shell executions
 - various code cleanups
 - allow data parse/store functions to call parent query function on demand
+- add GDC icons arhive for future links/shortcuts
 
 #### 1.049 :
 - various function optimizations
