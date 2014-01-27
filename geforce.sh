@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.049"
+VERSION="1.1"
 
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
 DOWNLOAD_PATH="${DOWNLOAD_PATH:=}"	# download path ex: DOWNLOAD_PATH="${DOWNLOAD_PATH:=/this/download/path}"
@@ -338,6 +338,7 @@ get-adapter || error "not Geforce drivers compatabile adapter :: $VID_DESC"
 get-online-data || error "in online data query :: $FILE_DATA"
 get-latest-ver || error "invalid driver version string :: $LATEST_VER"
 get-installed-ver || error "invalid driver version string :: $INSTALLED_VER"
+UPDATE=true
 check-versions
 $CHECK_ONLY && { $UPDATE && exit 0 || exit 1; }
 $UPDATE || $REINSTALL || exit 0
