@@ -6,9 +6,10 @@ Copyright (c) 2013 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.049](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.05](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
 ###RELEASE NOTES:
+
 #### 1.05 :
 - fix check only exit condition
 - use environments globals for defaults first, if exist and not empty
