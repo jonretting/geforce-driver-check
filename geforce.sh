@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.1"
+VERSION="1.05"
 
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
 DOWNLOAD_PATH="${DOWNLOAD_PATH:=}"	# download path ex: DOWNLOAD_PATH="${DOWNLOAD_PATH:=/this/download/path}"
