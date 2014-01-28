@@ -24,11 +24,11 @@ VERSION="1.05"
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
 DOWNLOAD_PATH="${DOWNLOAD_PATH:=}"	# download path ex: DOWNLOAD_PATH="${DOWNLOAD_PATH:=/this/download/path}"
 EXTRACT_PREFIX="${EXTRACT_PREFIX:-$SYSTEMDRIVE\NVIDIA}" # extract driver file here use WIN/DOS path
-${INTERNATIONAL:-false}	# use international driver package version multi language support
+INTERNATIONAL="${INTERNATIONAL:-false}"	# use international driver package version multi language support
 USER_AGENT="${USER_AGENT:-Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0}"	# agent passed to wget
 
 # remove these nvidia packages from driver install
-EXCLUDED_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
+EXCLUDED_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "Network.Service" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
 
 usage () {
 	echo " Geforce Driver Check $VERSION
@@ -182,6 +182,7 @@ get-online-data () {
 get-latest-name () {
 	[[ "$1" == true ]] && get-online-data
 	FILE_NAME="$(echo ${FILE_DATA##/*/})"
+	$INTERNATIONAL && FILE_NAME="$(echo ${FILE_NAME/english/international/})"
 	[[ "$FILE_NAME" == *.exe ]]
 }
 get-latest-ver () {
@@ -263,9 +264,10 @@ get-excluded-pkgs () {
 extract-pkg () {
 	echo -ne "Extracting new driver archive..."
 	local src="$(cygpath -wa "$DOWNLOAD_PATH/$FILE_NAME")"
-	local dest="$EXTRACT_PREFIX\GDC-$LATEST_VER_NAME-$(date +%m%y%S)"
-	"$SZ" x "$src" -o"$dest" get-excluded-pkgs >/dev/null && echo "Done"
+	EXTRACT_PATH="$EXTRACT_PREFIX\GDC-$LATEST_VER-$(date +%m%y%S)"
+	7z x "$src" -o"$EXTRACT_PATH" $(get-excluded-pkgs) -y &>/dev/null && echo "Done"
 }
+
 comp-setup-args () {
 	SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 	$SILENT && SETUP_ARGS+=" -s"
