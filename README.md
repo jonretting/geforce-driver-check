@@ -6,9 +6,18 @@ Copyright (c) 2013 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.05](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.051-BugFix](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
 ### Release Notes:
+
+#### 1.051-BugFix:
+- fix extract path
+- fix international vars
+- fix adapater type
+- fix installed ver number
+- fix install path
+- add 7zip -y flag
+- add Network.Service to do not install pkg array (is user editable array top of script)
 
 #### 1.05 :
 - fix check only exit condition

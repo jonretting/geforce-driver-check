@@ -2,6 +2,15 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.051-BugFix:
+- fix extract path
+- fix international vars
+- fix adapater type
+- fix installed ver number
+- fix install path
+- add 7zip -y flag
+- add Network.Service to do not install pkg array (is user editable array top of script)
+
 #### 1.05 :
 - fix check only exit condition
 - use environments globals for defaults first, if exist and not empty
