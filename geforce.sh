@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-VERSION="1.05"
+VERSION="1.051"
 
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
 DOWNLOAD_PATH="${DOWNLOAD_PATH:=}"	# download path ex: DOWNLOAD_PATH="${DOWNLOAD_PATH:=/this/download/path}"
@@ -265,7 +265,7 @@ extract-pkg () {
 	echo -ne "Extracting new driver archive..."
 	local src="$(cygpath -wa "$DOWNLOAD_PATH/$FILE_NAME")"
 	EXTRACT_PATH="$EXTRACT_PREFIX\GDC-$LATEST_VER-$(date +%m%y%S)"
-	7z x "$src" -o"$EXTRACT_PATH" $(get-excluded-pkgs) -y &>/dev/null && echo "Done"
+	"$SZ" x "$src" -o"$EXTRACT_PATH" $(get-excluded-pkgs) -y &>/dev/null && echo "Done"
 }
 
 comp-setup-args () {
