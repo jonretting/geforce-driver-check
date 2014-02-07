@@ -28,7 +28,7 @@ INTERNATIONAL="${INTERNATIONAL:-false}"	# use international driver package versi
 USER_AGENT="${USER_AGENT:-Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0}"	# agent passed to wget
 
 # remove these nvidia packages from driver install
-EXCLUDED_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "Network.Service" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
+EXCLUDED_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "Display.NView" "Network.Service" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
 
 usage () {
 	echo " Geforce Driver Check $VERSION
