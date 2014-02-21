@@ -267,7 +267,6 @@ extract-pkg () {
 	EXTRACT_PATH="$EXTRACT_PREFIX\GDC-$LATEST_VER-$(date +%m%y%S)"
 	"$SZ" x "$src" -o"$EXTRACT_PATH" $(get-excluded-pkgs) -y &>/dev/null && echo "Done"
 }
-
 comp-setup-args () {
 	SETUP_ARGS="-nofinish -passive -nosplash -noeula"
 	$SILENT && SETUP_ARGS+=" -s"
