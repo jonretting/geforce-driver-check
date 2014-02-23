@@ -41,6 +41,7 @@ usage () {
  -c    Clean install (removes all saved profiles and settings)
  -R    Force re-install of latest driver
  -d    Specify download location
+ -v    Verbose
  -C    Only check for new version (returns version#, 0=update available, 1=no update)
  -A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
  -i    Download international driver package (driver package for non English installs)
@@ -58,6 +59,7 @@ get-options () {
 			y) YES_TO_ALL=true ;;
 			d) DOWNLOAD_PATH="$OPTARG" ;;
 			c) CLEAN_INSTALL=true ;;
+			v) VERBOSE=true ;;
 			R) REINSTALL=true ;;
 			V) echo "Version $VERSION"; exit 0 ;;
 			C) CHECK_ONLY=true ;;
@@ -78,6 +80,8 @@ get-defaults () {
 	REINSTALL=false
 	ENABLE_REBOOT_PROMPT=false
 	UPDATE=false
+	VERBOSE=false
+	LOGGER=false
 	FAIL=false
 }
 ask () {
@@ -134,10 +138,9 @@ check-windows-arch () {
 	[[ -n "$wmic" && -n "$path" && "$wmic" == "$path" ]]
 }
 devices-archive () {
-	if ! check-files rs "$GDC_PATH/devices_notebook.txt $GDC_PATH/devices_desktop.txt"; then
-		tar xf "$GDC_PATH/devices_dbase.tar.gz" -C "$GDC_PATH"
-		check-files rs "$GDC_PATH/devices_notebook.txt $GDC_PATH/devices_desktop.txt"
-	fi
+	check-files rs "$GDC_PATH/devices_notebook.txt $GDC_PATH/devices_desktop.txt" && return 0
+	tar xf "$GDC_PATH/devices_dbase.tar.gz" -C "$GDC_PATH"
+	check-files rs "$GDC_PATH/devices_notebook.txt $GDC_PATH/devices_desktop.txt"
 }
 get-gdc-path () {
 	local src="$BASH_SOURCE"
@@ -313,15 +316,16 @@ check-result () {
 	cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "$DOWNLOAD_PATH/7z922-x64.msi")" || return 1
 }
 get-deps-array () {
-	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic' 'tar' 'gzip')
+	DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic' 'tar' 'gzip' 'logger')
 }
 check-deps () {
 	get-deps-array
 	for dep in "${DEPS[@]}"; do
 		case "$dep" in
-			wmic) check-hash wmic || PATH="$PATH:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH" ;;
-			  7z) check-hash 7z && SZ="7z" || 7zip || error "Dependency not found :: 7z (7-Zip)" ;;
-		  	   *) check-hash "$dep" || error "Dependency not found :: $dep"	;;
+		   logger) check-hash logger && LOGGER=true ;;
+			 wmic) check-hash wmic || PATH="$PATH:$(cygpath -S)/Wbem"; check-hash wmic || error "adding wmic to PATH" ;;
+			   7z) check-hash 7z && SZ="7z" || 7zip || error "Dependency not found :: 7z (7-Zip)" ;;
+		  	    *) check-hash "$dep" || error "Dependency not found :: $dep" ;;
 		esac
 	done
 }
