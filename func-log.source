@@ -1,0 +1,21 @@
+# sourced logging functionality
+
+new-exception () {
+	# exc code id msg action
+}
+log-exception () {
+	# displays msg on screen
+	# uses logger if true else echo | tee
+	# logit.sh applicable...
+}
+throw-exception () {
+	# do exception action
+}
+get-exceptions () {
+	source "$GDC_PATH/"
+	# load in db of msg,id,action
+}
+exceptional () {
+	get-gdc-path #|| dofatal error "validating scripts execution path :: $GDC_PATH"
+	get-exceptions
+}
