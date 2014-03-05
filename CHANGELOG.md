@@ -2,7 +2,17 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
-#### 1.051-BugFix:
+#### 1.06-BETA:
+- add logger to deps list, and validate true
+- add non functioning reminder options logger and verbose
+- minify devices compat detect function
+- prep adding log message output to windows event log
+- remove hyphen from function names
+- replace echo with printf where appropriate
+- fix inf loop detect counter for source script path
+- *remove/alter vast majority of bashisms
+
+#### 1.051-BugFix :
 - fix extract path
 - fix international vars
 - fix adapater type

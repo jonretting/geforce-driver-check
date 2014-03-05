@@ -1,14 +1,26 @@
 Geforce Driver Check (GDC)
 ==========================
 ### Checks for new Nvidia Display Drivers then does an automated unattended install, or with many more options.
-Copyright (c) 2013 Jon Retting
+Copyright (c) 2014 Jon Retting
 
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.051-BugFix](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.06-BETA](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+
+### [v1.051-BugFix](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.051-BugFix.zip/download)
 
 ### Release Notes:
+
+#### 1.06-BETA:
+- add logger to deps list, and validate true
+- add non functioning reminder options logger and verbose
+- minify devices compat detect function
+- prep adding log message output to windows event log
+- remove hyphen from function names
+- replace echo with printf where appropriate
+- fix inf loop detect counter for source script path
+- *remove/alter vast majority of bashisms
 
 #### 1.051-BugFix:
 - fix extract path
@@ -26,13 +38,6 @@ Copyright (c) 2013 Jon Retting
 - various code cleanups
 - allow data parse/store functions to call parent query function on demand
 - add GDC icons arhive for future links/shortcuts
-
-#### 1.049 :
-- various function optimizations
-- improve nvidia web query handling
-- increased exception handling for root paths and downloads path
-- added devices and notebook devices dbase files as tarball
-- verify adapter description again devices dbase, instead of just notebook detection
 
 INFO:
 -----
@@ -101,10 +106,10 @@ EXAMPLES:
 
 ### TODO:
 - *! trap ctrl-c/z and kill anything and everything script executed
-- *use logger instead of tee, maybe custom logit to windows events
+- *use logger instead of tee, use custom logit to windows events
 - *make compatible with multiple installed nvidia card environments
 - correct handling of assorted nvidia graphics hardware
-- atempt to use registry as informational data fallback
+- atempt to use registry as data fallback
 - create windows shortcuts to geforce.sh option, launch from windows bat file
 - add notification email switch when update is available
 - make crontab friendly
