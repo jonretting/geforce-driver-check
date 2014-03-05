@@ -149,7 +149,7 @@ getgdcpath () {
 		local dir="$(cd -P "$(dirname "$src")" && pwd)"
 		local src="$(readlink "$src")"
 		[ $src != /* ] && local src="$dir/$src"
-		let local c=c+1; [ "$c" -gt 3 ] && return 1
+		local c=$(($c+1)); [ "$c" -gt 3 ] && return 1
 	done
 	GDC_PATH="$(cd -P "$(dirname "$src")" && pwd)"
 	checkpath "$GDC_PATH"
@@ -345,7 +345,6 @@ getonlinedata || error "in online data query :: $FILE_DATA"
 getlatestver || error "invalid driver version string :: $LATEST_VER"
 getinstalledver || error "invalid driver version string :: $INSTALLED_VER"
 checkversions
-UPDATE=true
 $CHECK_ONLY && { $UPDATE && exit 0 || exit 1; }
 $UPDATE || $REINSTALL || exit 0
 getlatestname || error "invalid file name returned :: $FILE_NAME"
