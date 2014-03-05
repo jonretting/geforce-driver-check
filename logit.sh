@@ -31,11 +31,11 @@ usage () {
  -s    Source File: the script which returned the error exit code
  -h    This cruft"
 }
-get-options () {
+getoptions () {
 	local opts="e:i:s:"
 	while getopts "$opts" OPTIONS; do
 		case "${OPTIONS}" in
-			e) PRIORITY=$(get-priority-level "${OPTARG}") ;;
+			e) PRIORITY=$(getprioritylevel "${OPTARG}") ;;
             i) ID="${OPTARG}" ;;
 			s) SOURCE="${OPTARG}" ;;
 			h) usage; exit 0 ;;
@@ -43,7 +43,7 @@ get-options () {
 		esac
 	done
 }
-get-priority-level () {
+getprioritylevel () {
 	local arg="$1"
 	case "$arg" in
        0|success|SUCCESS|true) echo "SUCCESS" ;;
@@ -53,12 +53,12 @@ get-priority-level () {
                             *) return 1 ;;
 	esac
 }
-get-desc () {
-	[[ -z "$1" ]] && return 1
+getdesc () {
+	[ -z "$1" ] && return 1
 	DESC="$1"
 	return 0
 }
-create-event () {
+createevent () {
 	local cmd="eventcreate /ID $ID /L Application /SO $SOURCE /T $PRIORITY /D "
 	if [[ "$1" == *';'* ]]; then
 		local IFS=';'
@@ -70,9 +70,9 @@ create-event () {
 	fi
 }
 
-get-options "$@" && shift $(($OPTIND-1))
+getoptions "$@" && shift $(($OPTIND-1))
 
-get-desc "$@" || { echo "Error no description given"; exit 1; }
+getdesc "$@" || { echo "Error no description given"; exit 1; }
 
 cat<<EOF>${TEMP}/eventcreate.tmp.cmd
 @echo off
@@ -84,7 +84,7 @@ unix2dos "${TEMP}/eventcreate.tmp.cmd" &>/dev/null
 
 cmd /c "%TEMP%\eventcreate.tmp.cmd"
 
-create-event
+createevent
 
 rm "${TEMP}/eventcreate.tmp.cmd"
 
