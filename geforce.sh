@@ -237,7 +237,7 @@ updatetxt () {
 	$FAIL && error "Your installed Version is somehow newer than NVIDIA latest version"
 	$REINSTALL && { echo "Installed verison: $INSTALLED_VER_NAME, re-installing: $LATEST_VER_NAME"; return 0; }
 	$UPDATE || { echo "Already latest version: $INSTALLED_VER_NAME"; return 0; }
-	$UPDATE && echo -e "New version available!\nCurrent: $INSTALLED_VER_NAME\nLatest: $LATEST_VER_NAME"
+	$UPDATE && printf "%sNew version available"'!'"\nCurrent: $INSTALLED_VER_NAME\nLatest: $LATEST_VER_NAME"
 }
 askpromptsetup () {
 	local msg="Download, Extract, and Install new version"
