@@ -100,6 +100,8 @@ EXAMPLES:
 	`./geforce.sh -d "/home/me/Downloads" -s -y`
 
 ### TODO:
+- *! trap ctrl-c/z and kill anything and everything script executed
+- *use logger instead of tee, maybe custom logit to windows events
 - *make compatible with multiple installed nvidia card environments
 - correct handling of assorted nvidia graphics hardware
 - atempt to use registry as informational data fallback
