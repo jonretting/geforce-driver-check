@@ -42,7 +42,7 @@ Copyright (c) 2014 Jon Retting
 INFO:
 -----
 - Requires CYGWIN
-- Currently supports only Windows 7 x64 and Windows 8 x64
+- Currently supports: Windows 7 x64, Server 2008 r2, Windows 8/8.1 x64, (Server 2012 Untested)
 - Works with Desktop and Notebook Graphics adapters
 - No configuration needed to run, simply bash the slut
 - Compares your current version with latest available from Nvidias website
