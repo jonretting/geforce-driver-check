@@ -273,10 +273,10 @@ extractpkg () {
 }
 compsetupargs () {
 	SETUP_ARGS="-nofinish -passive -nosplash -noeula"
-	$SILENT && SETUP_ARGS+=" -s"
-	$CLEAN_INSTALL && SETUP_ARGS+=" -clean"
+	$SILENT && SETUP_ARGS="${SETUP_ARGS} -s"
+	$CLEAN_INSTALL && SETUP_ARGS="${SETUP_ARGS} -clean"
 	$ATTENDED && SETUP_ARGS=
-	$ENABLE_REBOOT_PROMPT || SETUP_ARGS+=" -n"
+	$ENABLE_REBOOT_PROMPT || SETUP_ARGS="${SETUP_ARGS} -n"
 }
 runinstaller () {
 	compsetupargs
