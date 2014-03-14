@@ -281,7 +281,10 @@ compsetupargs () {
 runinstaller () {
 	compsetupargs
 	printf "%sExecuting installer setup..."
-	cygstart -w --action=runas "$EXTRACT_PATH/setup.exe" "$SETUP_ARGS" && echo "Done"
+	cygstart -w --action=runas "$EXTRACT_PATH/setup.exe" "$SETUP_ARGS"
+	local code="$?"
+	echo "Done"
+	return "$code"
 }
 checkresult () {
 	getinstalleddata
