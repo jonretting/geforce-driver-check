@@ -6,12 +6,22 @@ Copyright (c) 2014 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.076-1](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.078](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
+#### [v1.076-1](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.076-1.zip/download)
 #### [v1.06-BETA](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.06-BETA.zip/download)
-#### [v1.051-BugFix](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.051-BugFix.zip/download)
 
 ### Release Notes:
+
+#### 1.078 :
+- improve naming conventions
+- replace all echo's with printf
+- remove eronious unimplemented vars and conditions
+- improve excluded package array handling for 7z extraction
+- add more return code handling for fallback cd
+- drop pointless cat commands
+- drop sed for substring match replacement
+- add quoting to prevent some word splitting where possible
 
 #### 1.076-1 :
 - fix wget bad var name for url
@@ -31,15 +41,6 @@ Copyright (c) 2014 Jon Retting
 - replace echo with printf where appropriate
 - fix inf loop detect counter for source script path
 - *remove/alter vast majority of bashisms
-
-#### 1.051-BugFix:
-- fix extract path
-- fix international vars
-- fix adapater type
-- fix installed ver number
-- fix install path
-- add 7zip -y flag
-- add Network.Service to do not install pkg array (is user editable array top of script)
 
 INFO:
 -----

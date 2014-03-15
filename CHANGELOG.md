@@ -2,6 +2,16 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.078 :
+- improve naming conventions
+- replace all echo's with printf
+- remove eronious unimplemented vars and conditions
+- improve excluded package array handling for 7z extraction
+- add more return code handling for fallback cd
+- drop pointless cat commands
+- drop sed for substring match replace
+- add quoting to prevent some word splitting where possible
+
 #### 1.076-1 :
 - fix wget bad var name for url
 - fix installer exit code issue
