@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-GDC_VERSION="1.077"
+GDC_VERSION="1.078"
 
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
 GDC_DL_PATH="${GDC_DL_PATH:=}"  # download path ex: GDC_DL_PATH="${GDC_DL_PATH:=/this/download/path}"
@@ -31,7 +31,7 @@ GDC_WGET_USR_AGENT="${GDC_WGET_USR_AGENT:-Mozilla/5.0 (Windows NT 6.1; WOW64; rv
 GDC_EXCL_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "Display.NView" "Network.Service" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
 
 echo_usage () {
-    printf "\n Geforce Driver Check $GDC_VERSION
+    printf "%s\n Geforce Driver Check $GDC_VERSION
  Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
  Usage: geforce.sh [-asycCAirVh] [-d=\"/download/path\"]
  Example: geforce.sh
@@ -59,7 +59,7 @@ get_options () {
             d) GDC_DL_PATH="$OPTARG" ;;
             c) GDC_CLEAN_INSTALL=true ;;
             R) GDC_REINSTALL=true ;;
-            V) printf "Version $GDC_VERSION\n"; exit 0 ;;
+            V) printf "%sVersion $GDC_VERSION\n"; exit 0 ;;
             C) GDC_CHECK_ONLY=true ;;
             A) GDC_ATTENDED=true; GDC_EXCL_PKGS=;;
             i) GDC_USE_INTL=true ;;
@@ -84,7 +84,7 @@ get_defaults () {
 ask () {
     while true; do
         [ "$2" ] && { local pmt="$2";local def=""; }; [ "$2" ] || { local pmt="y/n";local def=""; }
-        $GDC_YESTOALL && { local rpy="Y";local def="Y"; }; [ -z "$def" ] && { printf "%s $1 [$pmt] ";read rpy; }
+        $GDC_YESTOALL && { local rpy="Y";local def="Y"; }; [ -z "$def" ] && { printf "%s$1 [$pmt] ";read rpy; }
         [ -z "$rpy" ] && local rpy="$def"; case "$rpy" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
     done
 }
@@ -178,31 +178,31 @@ get_data_net () {
     [[ "$GDC_FILE_DATA" == '/Windows/'*'.exe' ]]
 }
 get_filename_latest () {
-    [ "$1" = true ] && get_data_net
+   #[ "$1" = true ] && get_data_net
     GDC_FILE_NAME="${GDC_FILE_DATA##/*/}"
     $GDC_USE_INTL && GDC_FILE_NAME="${GDC_FILE_NAME/english/international/}"
     [[ "$GDC_FILE_NAME" == *.exe ]]
 }
 get_ver_latest () {
-    [ "$1" = true ] && get_data_net
-    GDC_LATEST_VER_NAME="$(printf "$GDC_FILE_DATA" | cut -d\/ -f3)"
+    #[ "$1" = true ] && get_data_net
+    GDC_LATEST_VER_NAME="$(printf "%s$GDC_FILE_DATA" | cut -d\/ -f3)"
     GDC_LATEST_VER="${GDC_LATEST_VER_NAME//\./}"
     [[ "$GDC_LATEST_VER" =~ ^[0-9]+$ ]]
 }
 get_data_installed () {
     GDC_INSTALLED_DATA="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d')"
-    printf "$GDC_INSTALLED_DATA" | grep -q "NVIDIA"
+    printf "%s$GDC_INSTALLED_DATA" | grep -q "NVIDIA"
 }
 get_ver_installed () {
     [ "$1" = true ] && get_data_installed
-    GDC_INSTALLED_VER="$(printf "${GDC_INSTALLED_DATA##*=}" | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
-    GDC_INSTALLED_VER_NAME="$(printf "$GDC_INSTALLED_VER" | sed 's/./.&/4')"
+    GDC_INSTALLED_VER="$(printf "%s${GDC_INSTALLED_DATA##*=}" | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
+    GDC_INSTALLED_VER_NAME="$(printf "%s$GDC_INSTALLED_VER" | sed 's/./.&/4')"
     [[ "$GDC_INSTALLED_VER" =~ ^[0-9]+$ ]]
 }
 get_desc_adapter () {
-    [ "$1" = true ] && get_data_installed
+    #[ "$1" = true ] && get_data_installed
     GDC_NOTEBOOK=false
-    GDC_VID_DESC="$(printf "$GDC_INSTALLED_DATA" | awk -F\= '/NVIDIA/ {print $2}')"
+    GDC_VID_DESC="$(printf "%s$GDC_INSTALLED_DATA" | awk -F\= '/NVIDIA/ {print $2}')"
     [ -z "$GDC_VID_DESC" ] && return 1
     grep -wqs "$GDC_VID_DESC" "$GDC_PATH/devices_notebook.txt" && { GDC_NOTEBOOK=true; return 0; }
     grep -wqs "$GDC_VID_DESC" "$GDC_PATH/devices_desktop.txt" || return 1
@@ -211,7 +211,7 @@ check_url () {
     wget -U "$GDC_WGET_USR_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
 }
 get_uri_driver () {
-    [ "$1" = true ] && get_data_net
+    #[ "$1" = true ] && get_data_net
     local url="http://us.download.nvidia.com"
     GDC_DOWNLOAD_URL="$url$GDC_FILE_DATA"
     $GDC_USE_INTL && GDC_DOWNLOAD_URL="${GDC_DOWNLOAD_URL//english/international}"
@@ -229,8 +229,8 @@ eval_versions () {
 }
 echo_update_txt () {
     $GDC_FAIL && log_error "Your installed Version is somehow newer than NVIDIA latest version\n"
-    $GDC_REINSTALL && { printf "Installed verison: $GDC_INSTALLED_VER_NAME, re-installing: $GDC_LATEST_VER_NAME\n"; return 0; }
-    $GDC_UPDATE || { printf "Already latest version: $GDC_INSTALLED_VER_NAME\n"; return 0; }
+    $GDC_REINSTALL && { printf "%sInstalled verison: $GDC_INSTALLED_VER_NAME, re-installing: $GDC_LATEST_VER_NAME\n"; return 0; }
+    $GDC_UPDATE || { printf "%sAlready latest version: $GDC_INSTALLED_VER_NAME\n"; return 0; }
     $GDC_UPDATE && printf "%sNew version available"'!'"\nCurrent: $GDC_INSTALLED_VER_NAME\nLatest: $GDC_LATEST_VER_NAME"
 }
 ask_do_install () {
@@ -247,10 +247,10 @@ check_valid_download  () {
     [ "$lsize" -eq "$rsize" ] || { printf "Failed"; sleep 2; return 1; }
     printf "Done\n"
     printf "Testing archive integrity..."
-    "$7Z" t "$(cygpath -wa "$GDC_DL_PATH/$GDC_FILE_NAME")"
+    "$SZ" t "$(cygpath -wa "$GDC_DL_PATH/$GDC_FILE_NAME")"
 }
 wget_latest_driver () {
-    printf "Downloading latest version into \"$GDC_DL_PATH\"..."
+    printf "%sDownloading latest version into \"$GDC_DL_PATH\"..."
     [ "$1" = true ] && rm -f "$GDC_DL_PATH/$GDC_FILE_NAME" || local opts='-N'
     wget -U "$GDC_WGET_USR_AGENT" --no-cookies $opts -P "$GDC_DL_PATH" "$GDC_DOWNLOAD_URL"
 }
@@ -295,18 +295,18 @@ find_path_szip () {
     done
     return 1
 }
-wget_szip () {
-    local url="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
-    ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
-    get_path_download || { printf "error getting download path, try [-d /path]"; return 1; }
-    wget -U "$GDC_WGET_USR_AGENT" --no-cookies -N --no-check-certificate -P "$GDC_DL_PATH" "$url" && exec_msi_szip || return 1
-    find_path_szip
-}
 exec_msi_szip () {
     local msiexec="$(cygpath -S)/msiexec.exe"
     check_file x "$msiexec" || return 1
     ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local passive="/passive"
     cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "$GDC_DL_PATH/7z922-x64.msi")" || return 1
+}
+wget_szip () {
+    local url="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
+    ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
+    get_path_download || { printf "error getting download path, try [-d /path]"; return 1; }
+    wget -U "$GDC_WGET_USR_AGENT" --no-cookies -N --no-check-certificate -P "$GDC_DL_PATH" "$url" && { exec_msi_szip || return 1; } || return 1
+    find_path_szip
 }
 get_array_deps () {
     GDC_DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic' 'tar' 'gzip' 'logger')
@@ -335,7 +335,6 @@ get_desc_adapter || log_error "not Geforce drivers compatabile adapter :: $GDC_V
 get_data_net || log_error "in online data query :: $GDC_FILE_DATA"
 get_ver_latest || log_error "invalid driver version string :: $GDC_LATEST_VER"
 get_ver_installed || log_error "invalid driver version string :: $GDC_INSTALLED_VER"
-GDC_UPDATE=true
 eval_versions
 $GDC_CHECK_ONLY && { $GDC_UPDATE && exit 0 || exit 1; }
 $GDC_UPDATE || $GDC_REINSTALL || exit 0
@@ -351,7 +350,7 @@ elif $GDC_UPDATE; then
 fi
 check_mkdir "$GDC_ROOT_PATH/NVIDIA" || log_error "creating path :: $GDC_ROOT_PATH/NVIDIA"
 ext_7z_latest_driver || log_error "extracting new driver archive :: $GDC_EXT_PATH"
-#exec_installer || log_error "Installation failed or user interupted"
+exec_installer || log_error "Installation failed or user interupted"
 get_ver_installed true || log_error "invalid driver version string :: $GDC_INSTALLED_VER"
 eval_ver_installed || log_error "After all that your driver version didn't change!"
 printf "Driver update successfull!"
