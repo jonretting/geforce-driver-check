@@ -2,7 +2,15 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
-#### 1.06-BETA:
+#### 1.076 :
+- fix installer exit code issue
+- all function names changed for better readability, and follows common naming conventions
+- tab character indents replaced with four spaces per indent
+- all vars renamed for better readability, and given GDC_ prefix to avoid any shell  confusion
+- better Win OS architecture detection (no sub-shell), and more descriptive error
+- better Win OS version detection (no-sub-shell), and more descriptive error
+
+#### 1.06-BETA :
 - add logger to deps list, and validate true
 - add non functioning reminder options logger and verbose
 - minify devices compat detect function

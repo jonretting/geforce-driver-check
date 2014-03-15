@@ -6,11 +6,20 @@ Copyright (c) 2014 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.06-BETA](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.076](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
+### [v1.06-BETA](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.06-BETA.zip/download)
 ### [v1.051-BugFix](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.051-BugFix.zip/download)
 
 ### Release Notes:
+
+#### 1.076 :
+- fix installer exit code issue
+- all function names changed for better readability, and follows common naming conventions
+- tab character indents replaced with four spaces per indent
+- all vars renamed for better readability, and given GDC_ prefix to avoid any shell  confusion
+- better Win OS architecture detection (no sub-shell), and more descriptive error
+- better Win OS version detection (no-sub-shell), and more descriptive error
 
 #### 1.06-BETA:
 - add logger to deps list, and validate true
@@ -30,14 +39,6 @@ Copyright (c) 2014 Jon Retting
 - fix install path
 - add 7zip -y flag
 - add Network.Service to do not install pkg array (is user editable array top of script)
-
-#### 1.05 :
-- fix check only exit condition
-- use environments globals for defaults first, if exist and not empty
-- use more bash builtins over sub shell executions
-- various code cleanups
-- allow data parse/store functions to call parent query function on demand
-- add GDC icons arhive for future links/shortcuts
 
 INFO:
 -----
