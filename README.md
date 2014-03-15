@@ -8,8 +8,8 @@ Copyright (c) 2014 Jon Retting
 
 ### [Latest v1.076](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
-### [v1.06-BETA](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.06-BETA.zip/download)
-### [v1.051-BugFix](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.051-BugFix.zip/download)
+#### [v1.06-BETA](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.06-BETA.zip/download)
+#### [v1.051-BugFix](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.051-BugFix.zip/download)
 
 ### Release Notes:
 
