@@ -247,7 +247,7 @@ ask_do_reinstall () {
 check_valid_download  () {
     printf "%sMaking sure previously downloaded archive size is valid..."
     local lsize="$(stat -c %s "$GDC_DL_PATH/$GDC_FILE_NAME" 2>/dev/null)"
-    local rsize="$(wget -U "$GDC_WGET_USR_AGENT" --no-cookies --spider -qSO- 2>&1 "$GDC_GDC_DOWNLOAD_URL" | awk '/Length/ {print $2}')"
+    local rsize="$(wget -U "$GDC_WGET_USR_AGENT" --no-cookies --spider -qSO- 2>&1 "$GDC_DOWNLOAD_URL" | awk '/Length/ {print $2}')"
     [ "$lsize" -eq "$rsize" ] || { echo "Failed"; sleep 2; return 1; }
     echo "Done"
     echo "Testing archive integrity..."
@@ -256,7 +256,7 @@ check_valid_download  () {
 wget_latest_driver () {
     echo "Downloading latest version into \"$GDC_DL_PATH\"..."
     [ "$1" = true ] && rm -f "$GDC_DL_PATH/$GDC_FILE_NAME" || local opts='-N'
-    wget -U "$GDC_WGET_USR_AGENT" --no-cookies $opts -P "$GDC_DL_PATH" "$GDC_GDC_DOWNLOAD_URL"
+    wget -U "$GDC_WGET_USR_AGENT" --no-cookies $opts -P "$GDC_DL_PATH" "$GDC_DOWNLOAD_URL"
 }
 echo_array_pkgs_excl () {
     for pkg in "${GDC_EXCL_PKGS[@]}"; do
