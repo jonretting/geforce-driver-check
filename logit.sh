@@ -1,7 +1,10 @@
-#!/bin/bash
-# this generates a log.cmd file to retrun correct exit codes
+#!/usr/bin/env bash
+# Generates a log.cmd tmp file to retrun correct exit codes
 # in windows, and write a standard windows event with the proper info
-# then exits the log.cmd temp file, then deletes the file
+# then exits the log.cmd temp file, then deletes temp file
+# also generate standard logger entry and stdout the error
+# todo: respect any quit switch passed or given to parent
+#
 # *defaults to APPLICATION log*
 #
 # Copyright (c) 2014 Jon Retting
@@ -20,8 +23,8 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-usage () {
-	echo " usage: logit.sh [-h] [-e] [-i=n] [-s] <description>
+show_usage () {
+    echo " usage: logit.sh [-h] [-e] [-i=n] [-s] <description>
  example: logit.sh -e 1 -i 501 -s myscript.sh \"failed to run the mount command\"
  -e    Priority: 0 | success | SUCCESS | true   == SUCCESS
                  1 | error   | ERROR   | false  == ERROR
@@ -31,61 +34,88 @@ usage () {
  -s    Source File: the script which returned the error exit code
  -h    This cruft"
 }
-getoptions () {
-	local opts="e:i:s:"
-	while getopts "$opts" OPTIONS; do
-		case "${OPTIONS}" in
-			e) PRIORITY=$(getprioritylevel "${OPTARG}") ;;
-            i) ID="${OPTARG}" ;;
-			s) SOURCE="${OPTARG}" ;;
-			h) usage; exit 0 ;;
-			*) usage; exit 1 ;;
-		esac
-	done
+get_options () {
+    local opts="e:i:s:"
+    while getopts "$opts" OPTIONS; do
+        case "${OPTIONS}" in
+            e)
+                LGT_PRIORITY=$(get_priority_level "${OPTARG}")
+            ;;
+            i)
+                LGT_ID="${OPTARG}"
+            ;;
+            s)
+                LGT_SOURCE="${OPTARG}"
+            ;;
+            h)
+                show_usage
+                exit 0
+            ;;
+            *)
+                show_usage
+                exit 1
+            ;;
+        esac
+    done
 }
-getprioritylevel () {
-	local arg="$1"
-	case "$arg" in
-       0|success|SUCCESS|true) echo "SUCCESS" ;;
-          1|error|ERROR|false) echo "ERROR" ;;
-                  2|warn|WARN) echo "WARNING" ;;
-                  3|info|INFO) echo "INFORMATION" ;;
-                            *) return 1 ;;
-	esac
+get_priority_level () {
+    local arg="$1"
+    case "$arg" in
+        0|success|SUCCESS|true)
+            echo "SUCCESS"
+        ;;
+        1|error|ERROR|false)
+            echo "ERROR"
+        ;;
+        2|warn|WARN)
+            echo "WARNING"
+        ;;
+        3|info|INFO)
+            echo "INFORMATION"
+        ;;
+        *)
+            return 1
+        ;;
+    esac
 }
-getdesc () {
-	[ -z "$1" ] && return 1
-	DESC="$1"
-	return 0
+get_desc () {
+    [ -z "$1" ] && return 1
+    LGT_DESC="$1"
+    return 0
 }
-createevent () {
-	local cmd="eventcreate /ID $ID /L Application /SO $SOURCE /T $PRIORITY /D "
-	if [[ "$1" == *';'* ]]; then
-		local IFS=';'
-		for i in "$1"; do
-			$cmd "$i" &>/dev/null
-		done
-	else
-		$cmd "$DESC" &>/dev/null
-	fi
+create_event () {
+    local cmd="eventcreate /ID $LGT_ID /L Application /SO $LGT_SOURCE /T $LGT_PRIORITY /D "
+    if [[ "$1" == *';'* ]]; then
+        local IFS=';'
+        for i in "$1"; do
+            $cmd "$i" &>/dev/null
+        done
+    else
+        $cmd "$LGT_DESC" &>/dev/null
+    fi
 }
 
-getoptions "$@" && shift $(($OPTIND-1))
+get_options "$@" && shift $(($OPTIND-1))
 
-getdesc "$@" || { echo "Error no description given"; exit 1; }
+get_desc "$@" || { echo "Error no description given"; exit 1; }
 
-cat<<EOF>${TEMP}/eventcreate.tmp.cmd
+LGT_TEMP_FILE="$(mktemp --suffix .cmd)"
+
+cat<<EOF>${LGT_TEMP_FILE}
 @echo off
-set EXITCODE="$ID"
-exit /b %EXITCODE%
+set LGT_EXITCODE="$LGT_ID"
+exit /b %LGT_ID%
 EOF
 
-unix2dos "${TEMP}/eventcreate.tmp.cmd" &>/dev/null
+# todo check hash for unix2dos else use sed
+unix2dos "$LGT_TEMP_FILE" &>/dev/null
 
-cmd /c "%TEMP%\eventcreate.tmp.cmd"
+cmd /c "$LGT_TEMP_FILE"
 
-createevent
+create_event
 
-rm "${TEMP}/eventcreate.tmp.cmd"
+# todo also send to logger and stdout here
+
+rm -f "$LGT_TEMP_FILE"
 
 exit 0
