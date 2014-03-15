@@ -2,7 +2,8 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
-#### 1.076 :
+#### 1.076-1 :
+- fix wget bad var name for url
 - fix installer exit code issue
 - all function names changed for better readability, and follows common naming conventions
 - tab character indents replaced with four spaces per indent

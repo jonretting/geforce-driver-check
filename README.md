@@ -6,14 +6,15 @@ Copyright (c) 2014 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.076](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.076-1](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
 #### [v1.06-BETA](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.06-BETA.zip/download)
 #### [v1.051-BugFix](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.051-BugFix.zip/download)
 
 ### Release Notes:
 
-#### 1.076 :
+#### 1.076-1 :
+- fix wget bad var name for url
 - fix installer exit code issue
 - all function names changed for better readability, and follows common naming conventions
 - tab character indents replaced with four spaces per indent

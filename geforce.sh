@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-GDC_VERSION="1.076"
+GDC_VERSION="1.076-1"
 
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
 GDC_DL_PATH="${GDC_DL_PATH:=}"  # download path ex: GDC_DL_PATH="${GDC_DL_PATH:=/this/download/path}"
