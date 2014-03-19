@@ -181,23 +181,24 @@ get_filename_latest () {
    #[ "$1" = true ] && get_data_net
     GDC_FILE_NAME="${GDC_FILE_DATA##/*/}"
     $GDC_USE_INTL && GDC_FILE_NAME="${GDC_FILE_NAME/english/international/}"
-    [[ "$GDC_FILE_NAME" == *.exe ]]
+    GDC_FILE_NAME="$(printf "$GDC_FILE_NAME" | awk -F\. '/exe/ {print $(NF-1)}')"
+    [ "$GDC_FILE_NAME" != "exe" ]
 }
 get_ver_latest () {
     #[ "$1" = true ] && get_data_net
     GDC_LATEST_VER_NAME="$(printf "%s$GDC_FILE_DATA" | cut -d\/ -f3)"
     GDC_LATEST_VER="${GDC_LATEST_VER_NAME//\./}"
-    [[ "$GDC_LATEST_VER" =~ ^[0-9]+$ ]]
+    printf "$GDC_LATEST_VER" | grep -Eq '^[0-9]+$'
 }
 get_data_installed () {
     GDC_INSTALLED_DATA="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d')"
-    printf "%s$GDC_INSTALLED_DATA" | grep -q "NVIDIA"
+    printf "%s$GDC_INSTALLED_DATA" | grep -qo "NVIDIA"
 }
 get_ver_installed () {
     [ "$1" = true ] && get_data_installed
     GDC_INSTALLED_VER="$(printf "%s${GDC_INSTALLED_DATA##*=}" | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
     GDC_INSTALLED_VER_NAME="$(printf "%s$GDC_INSTALLED_VER" | sed 's/./.&/4')"
-    [[ "$GDC_INSTALLED_VER" =~ ^[0-9]+$ ]]
+    printf "$GDC_INSTALLED_VER" | grep -Eq '^[0-9]+$'
 }
 get_desc_adapter () {
     #[ "$1" = true ] && get_data_installed
