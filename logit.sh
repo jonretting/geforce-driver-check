@@ -24,58 +24,43 @@
 #
 
 show_usage () {
-    echo " usage: logit.sh [-h] [-e] [-i=n] [-s] <description>
- example: logit.sh -e 1 -i 501 -s myscript.sh \"failed to run the mount command\"
- -e    Priority: 0 | success | SUCCESS | true   == SUCCESS
-                 1 | error   | ERROR   | false  == ERROR
-                 2 | warn    | WARN |  == WARNING
-                 3 | info    | INFO |  == INFORMATION
- -i    Event ID: exit error code number
- -s    Source File: the script which returned the error exit code
- -h    This cruft"
+    printf " Desc: Creates a Windows Event log entry in Application
+
+ usage: logit.sh [-h] [-p] [-i=n] [-s] <description>
+
+ Options:
+ -p   Priority (severity):
+         0|true|success == SUCCESS
+         1|false|error  == ERROR
+         2|warn         == WARNING
+         3|info         == INFORMATION
+ -i   Windows Event ID (create a real one, or use any number)
+ -s   The source program associated with the entry
+ -h   This cruft
+
+ example: logit.sh -p error -i 501 -s myscript.sh \"failed to run the mount command\"
+"
 }
 get_options () {
-    local opts="e:i:s:"
+    local opts="p:i:s:h"
     while getopts "$opts" OPTIONS; do
-        case "${OPTIONS}" in
-            e)
-                LGT_PRIORITY=$(get_priority_level "${OPTARG}")
-            ;;
-            i)
-                LGT_ID="${OPTARG}"
-            ;;
-            s)
-                LGT_SOURCE="${OPTARG}"
-            ;;
-            h)
-                show_usage
-                exit 0
-            ;;
-            *)
-                show_usage
-                exit 1
-            ;;
+        case "$OPTIONS" in
+            p)  LGT_PRIORITY="$(get_priority_level "$OPTARG")" ;;
+            i)  LGT_ID="$OPTARG"     ;;
+            s)  LGT_SOURCE="$OPTARG" ;;
+            h)  show_usage; exit 0   ;;
+            *)  exit 1 ;;
         esac
     done
 }
 get_priority_level () {
     local arg="$1"
     case "$arg" in
-        0|success|SUCCESS|true)
-            echo "SUCCESS"
-        ;;
-        1|error|ERROR|false)
-            echo "ERROR"
-        ;;
-        2|warn|WARN)
-            echo "WARNING"
-        ;;
-        3|info|INFO)
-            echo "INFORMATION"
-        ;;
-        *)
-            return 1
-        ;;
+        0|true|success) printf "SUCCESS" ;;
+        1|false|error)  printf "ERROR"   ;;
+        2|warn)  printf "WARNING"        ;;
+        3|info)  printf "INFORMATION"    ;;
+        *)  return 1 ;;
     esac
 }
 get_desc () {
@@ -95,13 +80,13 @@ create_event () {
     fi
 }
 
-get_options "$@" && shift $(($OPTIND-1))
+get_options "$@" && shift $((OPTIND-1))
 
 get_desc "$@" || { echo "Error no description given"; exit 1; }
 
 LGT_TEMP_FILE="$(mktemp --suffix .cmd)"
 
-cat<<EOF>${LGT_TEMP_FILE}
+cat<<EOF>$LGT_TEMP_FILE
 @echo off
 set LGT_EXITCODE="$LGT_ID"
 exit /b %LGT_ID%
@@ -110,7 +95,7 @@ EOF
 # todo check hash for unix2dos else use sed
 unix2dos "$LGT_TEMP_FILE" &>/dev/null
 
-cmd /c "$LGT_TEMP_FILE"
+cmd /c "$(cygpath -wa "$LGT_TEMP_FILE")"
 
 create_event
 
