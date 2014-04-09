@@ -6,12 +6,20 @@ Copyright (c) 2014 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.078](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.082](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
+#### [v1.078](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.078.zip/download)
 #### [v1.076-1](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.076-1.zip/download)
-#### [v1.06-BETA](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.06-BETA.zip/download)
 
 ### Release Notes:
+
+#### 1.082 :
+- bug fix filename validation per extraction error
+- include 7za as valid 7z binary dependency
+- add 337.50 Desktop Devices hwid list
+- use double underscore for function names
+- switch all variables to lowercase
+- add additional recursive mkdir error handling
 
 #### 1.078 :
 - improve naming conventions
@@ -31,16 +39,6 @@ Copyright (c) 2014 Jon Retting
 - all vars renamed for better readability, and given GDC_ prefix to avoid any shell  confusion
 - better Win OS architecture detection (no sub-shell), and more descriptive error
 - better Win OS version detection (no-sub-shell), and more descriptive error
-
-#### 1.06-BETA:
-- add logger to deps list, and validate true
-- add non functioning reminder options logger and verbose
-- minify devices compat detect function
-- prep adding log message output to windows event log
-- remove hyphen from function names
-- replace echo with printf where appropriate
-- fix inf loop detect counter for source script path
-- *remove/alter vast majority of bashisms
 
 INFO:
 -----
@@ -108,12 +106,13 @@ EXAMPLES:
 	`./geforce.sh -d "/home/me/Downloads" -s -y`
 
 ### TODO:
+- * add re-install option of any previously GDC installed driver package, and just rollback
 - *! trap ctrl-c/z and kill anything and everything script executed
 - *use logger instead of tee, use custom logit to windows events
 - *make compatible with multiple installed nvidia card environments
+- remove .sh suffix for release candidate
 - correct handling of assorted nvidia graphics hardware
-- atempt to use registry as data fallback
-- create windows shortcuts to geforce.sh option, launch from windows bat file
+- create windows shortcuts to geforce.sh option
 - add notification email switch when update is available
 - make crontab friendly
 - add long format options --re-install
@@ -121,4 +120,3 @@ EXAMPLES:
 - add geforce inspector tool install options
 - add ntune o/c settings option show oc pane
 - add driver purge style installation, complete graphics driver removal
-- make readme not terrible

@@ -2,6 +2,14 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.082 :
+- bug fix filename validation per extraction error
+- include 7za as valid 7z binary dependency
+- add 337.50 Desktop Devices hwid list
+- use double underscore for function names
+- switch all variables to lowercase
+- add additional recursive mkdir error handling
+
 #### 1.078 :
 - improve naming conventions
 - replace all echo's with printf
