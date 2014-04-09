@@ -19,19 +19,19 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-GDC_VERSION="1.08"
+gdc_version="1.082"
 
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
-GDC_DL_PATH="${GDC_DL_PATH:=}"  # download path ex: GDC_DL_PATH="${GDC_DL_PATH:=/this/download/path}"
-GDC_EXT_PATH="${GDC_EXT_PATH:-$SYSTEMDRIVE\NVIDIA}" # extract driver file here use WIN/DOS path
-GDC_USE_INTL="${GDC_USE_INTL:-false}" # use international driver package version multi language support
-GDC_WGET_USR_AGENT="${GDC_WGET_USR_AGENT:-Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0}"    # agent passed to wget
+gdc_dl_path="${gdc_dl_path:=}"  # download path ex: gdc_dl_path="${gdc_dl_path:=/this/download/path}"
+gdc_ext_path="${gdc_ext_path:-$SYSTEMDRIVE\NVIDIA}" # extract driver file here use WIN/DOS path
+gdc_use_intl="${gdc_use_intl:-false}" # use international driver package version multi language support
+gdc_wget_usr_agent="${gdc_wget_usr_agent:-Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0}"    # agent passed to wget
 
 # remove these nvidia packages from driver install
-GDC_EXCL_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "Display.NView" "Network.Service" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
+gdc_excl_pkgs=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "Display.NView" "Network.Service" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
 
-gdc_print_usage () {
-    printf "%s\n Geforce Driver Check $GDC_VERSION
+__print_usage () {
+    printf "%s\n Geforce Driver Check $gdc_version
  Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
  Usage: geforce.sh [-asycCAirVh] [-d=\"/download/path\"]
  Example: geforce.sh
@@ -48,54 +48,54 @@ gdc_print_usage () {
  -V    Displays version info
  -h    this crupt\n"
 }
-gdc_get_options () {
-    gdc_get_defaults
+__get_options () {
+    __get_defaults
     local opts="asyd:cRVCAirh"
-    while getopts "$opts" GDC_OPTIONS; do
-        case "$GDC_OPTIONS" in
-            a) GDC_ATTENDED=true ;;
-            s) GDC_SILENT=true ;;
-            y) GDC_YESTOALL=true ;;
-            d) GDC_DL_PATH="$OPTARG" ;;
-            c) GDC_CLEAN_INSTALL=true ;;
-            R) GDC_REINSTALL=true ;;
-            V) printf "%sVersion $GDC_VERSION\n"; exit 0 ;;
-            C) GDC_CHECK_ONLY=true ;;
-            A) GDC_ATTENDED=true; GDC_EXCL_PKGS=;;
-            i) GDC_USE_INTL=true ;;
-            r) GDC_USE_REBOOT_PROMPT=true ;;
-            h) gdc_print_usage; exit 0 ;;
-            *) gdc_print_usage; exit 1 ;;
+    while getopts "$opts" gdc_options; do
+        case "$gdc_options" in
+            a) gdc_attended=true ;;
+            s) gdc_silent=true ;;
+            y) gdc_yestoall=true ;;
+            d) gdc_dl_path="$OPTARG" ;;
+            c) gdc_clean_install=true ;;
+            R) gdc_reinstall=true ;;
+            V) printf "%sVersion $gdc_version\n"; exit 0 ;;
+            C) gdc_check_only=true ;;
+            A) gdc_attended=true; gdc_excl_pkgs=;;
+            i) gdc_use_intl=true ;;
+            r) gdc_use_reboot_prompt=true ;;
+            h) __print_usage; exit 0 ;;
+            *) __print_usage; exit 1 ;;
         esac
     done
 }
-gdc_get_defaults () {
-    GDC_SILENT=false
-    GDC_YESTOALL=false
-    GDC_CHECK_ONLY=false
-    GDC_ATTENDED=false
-    GDC_CLEAN_INSTALL=false
-    GDC_REINSTALL=false
-    GDC_USE_REBOOT_PROMPT=false
-    GDC_UPDATE=false
-    GDC_FAIL=false
-    GDC_SCRIPT_PATH="$0"
+__get_defaults () {
+    gdc_silent=false
+    gdc_yestoall=false
+    gdc_check_only=false
+    gdc_attended=false
+    gdc_clean_install=false
+    gdc_reinstall=false
+    gdc_use_reboot_prompt=false
+    gdc_update=false
+    gdc_fail=false
+    gdc_script_path="$0"
 }
-gdc_ask () {
+__ask () {
     while true; do
         [ "$2" ] && { local pmt="$2";local def=""; }; [ "$2" ] || { local pmt="y/n";local def=""; }
-        $GDC_YESTOALL && { local rpy="Y";local def="Y"; }; [ -z "$def" ] && { printf "%s$1 [$pmt] ";read rpy; }
+        $gdc_yestoall && { local rpy="Y";local def="Y"; }; [ -z "$def" ] && { printf "%s$1 [$pmt] ";read rpy; }
         [ -z "$rpy" ] && local rpy="$def"; case "$rpy" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
     done
 }
-gdc_log_error () {
+__log_error () {
     printf "%s$(date): Error: geforce.sh : $1" | tee -a /var/log/messages
     exit 1
 }
-gdc_check_hash () {
+__check_hash () {
     hash "$1" 2>/dev/null
 }
-gdc_check_file () {
+__check_file () {
     while [ ${#} -gt 0 ]; do
         case "$1" in
             x) [ -x "$2" ] || return 1 ;;
@@ -109,246 +109,246 @@ gdc_check_file () {
         shift
     done
 }
-gdc_check_files () {
+__check_files () {
     local files="$2"; local opts="$1"
     for file in $files; do
-        gdc_check_file "$opts" "$file" || return 1
+        __check_file "$opts" "$file" || return 1
     done
 }
-gdc_check_path () {
-    gdc_check_file dr "$1"
+__check_path () {
+    __check_file dr "$1"
 }
-gdc_check_mkdir () {
-    gdc_check_path "$1" || { mkdir -p "$1" || gdc_log_error "error creating folder paths"; }
+__check_mkdir () {
+    __check_path "$1" || { mkdir -p "$1" || __log_error "error creating folder paths"; }
 }
-gdc_check_cygwin () {
+__check_cygwin () {
     [ "$(uname -o)" = "Cygwin" ]
 }
-gdc_check_ver_os () {
+__check_ver_os () {
     [ "$1" = true ] && { wmic os get version /value | grep -Eo '[^=]*$'; return $?; }
     wmic os get version /value | grep -Eq '6\.[1-3]{1}.*'
 }
-gdc_check_arch_win () {
+__check_arch_win () {
     [ "$1" = true ] && { wmic OS get OSArchitecture /value | grep -Eo '[^=]*$'; return $?; }
     wmic OS get OSArchitecture /value | grep -q '64-bit'
 }
-gdc_ext_tar_devices () {
-    gdc_check_files rs "$GDC_PATH/devices_notebook.txt $GDC_PATH/devices_desktop.txt" && return 0
-    tar xf "$GDC_PATH/devices_dbase.tar.gz" -C "$GDC_PATH"
-    gdc_check_files rs "$GDC_PATH/devices_notebook.txt $GDC_PATH/devices_desktop.txt"
+__ext_tar_devices () {
+    __check_files rs "$gdc_path/devices_notebook.txt $gdc_path/devices_desktop.txt" && return 0
+    tar xf "$gdc_path/devices_dbase.tar.gz" -C "$gdc_path"
+    __check_files rs "$gdc_path/devices_notebook.txt $gdc_path/devices_desktop.txt"
 }
-gdc_get_path_gdc () {
-    local src="$GDC_SCRIPT_PATH"
+__get_path_gdc () {
+    local src="$gdc_script_path"
     while [ -h "$src" ]; do
         local dir="$(cd -P "$(dirname "$src")" && pwd)"
         local src="$(readlink "$src")"
         [ "$src" != /* ] && local src="$dir/$src"
         local c=$((c+1)); [ "$c" -gt 3 ] && return 1
     done
-    GDC_PATH="$(cd -P "$(dirname "$src")" && pwd)"
-    gdc_check_path "$GDC_PATH"
+    gdc_path="$(cd -P "$(dirname "$src")" && pwd)"
+    __check_path "$gdc_path"
 }
-gdc_get_path_root () {
-    [ -n "$SYSTEMDRIVE" ] && GDC_ROOT_PATH="$(cygpath "$SYSTEMDRIVE")"
-    gdc_check_path "$GDC_ROOT_PATH" && return 0
-    GDC_ROOT_PATH="$(cd -P "$(cygpath -W)" && { cd .. && pwd; } || return 1)"
-    gdc_check_path "$GDC_ROOT_PATH" && return 0
-    GDC_ROOT_PATH="$(which explorer.exe | sed 's/.Windows\/explorer\.exe//')"
-    gdc_check_path "$GDC_ROOT_PATH"
+__get_path_root () {
+    [ -n "$SYSTEMDRIVE" ] && gdc_root_path="$(cygpath "$SYSTEMDRIVE")"
+    __check_path "$gdc_root_path" && return 0
+    gdc_root_path="$(cd -P "$(cygpath -W)" && { cd .. && pwd; } || return 1)"
+    __check_path "$gdc_root_path" && return 0
+    gdc_root_path="$(which explorer.exe | sed 's/.Windows\/explorer\.exe//')"
+    __check_path "$gdc_root_path"
 }
-gdc_get_path_download () {
-    [ -n "$SYSTEMDRIVE" ] && gdc_check_path "$GDC_DL_PATH" && return 0
-    GDC_DL_PATH="$(cygpath -O | sed 's/Documents/Downloads/')"
-    gdc_check_path "$GDC_DL_PATH" && return 0
-    GDC_DL_PATH="$GDC_EXT_PATH/Downloads"
-    gdc_check_mkdir "$GDC_DL_PATH" && return 0
-    GDC_DL_PATH="$(cd -P "$(cygpath -O)" && { cd ../Downloads && pwd; } || return 1)"
-    gdc_check_path "$GDC_DL_PATH"
+__get_path_download () {
+    [ -n "$SYSTEMDRIVE" ] && __check_path "$gdc_dl_path" && return 0
+    gdc_dl_path="$(cygpath -O | sed 's/Documents/Downloads/')"
+    __check_path "$gdc_dl_path" && return 0
+    gdc_dl_path="$gdc_ext_path/Downloads"
+    __check_mkdir "$gdc_dl_path" && return 0
+    gdc_dl_path="$(cd -P "$(cygpath -O)" && { cd ../Downloads && pwd; } || return 1)"
+    __check_path "$gdc_dl_path"
 }
-gdc_get_wget () {
-    wget -U "$GDC_WGET_USR_AGENT" --no-cookies -qO- 2>/dev/null "$1"
+__get_wget () {
+    wget -U "$gdc_wget_usr_agent" --no-cookies -qO- 2>/dev/null "$1"
 }   
-gdc_get_data_net () {
+__get_data_net () {
     local desktop_id="95"
     local notebook_id="92"
     local link="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
-    $GDC_NOTEBOOK && local link+="$notebook_id" || local link+="$desktop_id"
-    local link="$(gdc_get_wget "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F\' 'NR==1 {print $2}')"
-    GDC_FILE_DATA="$(gdc_get_wget "$link" | awk 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
-    [[ "$GDC_FILE_DATA" == '/Windows/'*'.exe' ]]
+    $gdc_notebook && local link+="$notebook_id" || local link+="$desktop_id"
+    local link="$(__get_wget "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F\' 'NR==1 {print $2}')"
+    gdc_file_data="$(__get_wget "$link" | awk 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
+    [[ "$gdc_file_data" == '/Windows/'*'.exe' ]]
 }
-gdc_get_filename_latest () {
-    GDC_FILE_NAME="${GDC_FILE_DATA##/*/}"
-    $GDC_USE_INTL && GDC_FILE_NAME="${GDC_FILE_NAME/english/international/}"
-    printf "$GDC_FILE_NAME" | grep -Eq "^$GDC_LATEST_VER_NAME\-.*\.exe$" 
+__get_filename_latest () {
+    gdc_file_name="${gdc_file_data##/*/}"
+    $gdc_use_intl && gdc_file_name="${gdc_file_name/english/international/}"
+    printf "$gdc_file_name" | grep -Eq "^$gdc_latest_ver_name\-.*\.exe$" 
 }
-gdc_get_ver_latest () {
-    GDC_LATEST_VER_NAME="$(printf "%s$GDC_FILE_DATA" | cut -d\/ -f3)"
-    GDC_LATEST_VER="${GDC_LATEST_VER_NAME//\./}"
-    printf "$GDC_LATEST_VER" | grep -Eq '^[0-9]+$'
+__get_ver_latest () {
+    gdc_latest_ver_name="$(printf "%s$gdc_file_data" | cut -d\/ -f3)"
+    gdc_latest_ver="${gdc_latest_ver_name//\./}"
+    printf "$gdc_latest_ver" | grep -Eq '^[0-9]+$'
 }
-gdc_get_data_installed () {
-    GDC_INSTALLED_DATA="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d')"
-    printf "%s$GDC_INSTALLED_DATA" | grep -qo "NVIDIA"
+__get_data_installed () {
+    gdc_installed_data="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d')"
+    printf "%s$gdc_installed_data" | grep -qo "NVIDIA"
 }
-gdc_get_ver_installed () {
-    [ "$1" = true ] && gdc_get_data_installed
-    GDC_INSTALLED_VER="$(printf "%s${GDC_INSTALLED_DATA##*=}" | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
-    GDC_INSTALLED_VER_NAME="$(printf "%s$GDC_INSTALLED_VER" | sed 's/./.&/4')"
-    printf "$GDC_INSTALLED_VER" | grep -Eq '^[0-9]+$'
+__get_ver_installed () {
+    [ "$1" = true ] && __get_data_installed
+    gdc_installed_ver="$(printf "%s${gdc_installed_data##*=}" | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
+    gdc_installed_ver_name="$(printf "%s$gdc_installed_ver" | sed 's/./.&/4')"
+    printf "$gdc_installed_ver" | grep -Eq '^[0-9]+$'
 }
-gdc_get_desc_adapter () {
-    GDC_NOTEBOOK=false
-    GDC_VID_DESC="$(printf "%s$GDC_INSTALLED_DATA" | awk -F\= '/NVIDIA/ {print $2}')"
-    [ -z "$GDC_VID_DESC" ] && return 1
-    grep -wqs "$GDC_VID_DESC" "$GDC_PATH/devices_notebook.txt" && { GDC_NOTEBOOK=true; return 0; }
-    grep -wqs "$GDC_VID_DESC" "$GDC_PATH/devices_desktop.txt" || return 1
+__get_desc_adapter () {
+    gdc_notebook=false
+    gdc_vid_desc="$(printf "%s$gdc_installed_data" | awk -F\= '/NVIDIA/ {print $2}')"
+    [ -z "$gdc_vid_desc" ] && return 1
+    grep -wqs "$gdc_vid_desc" "$gdc_path/devices_notebook.txt" && { gdc_notebook=true; return 0; }
+    grep -wqs "$gdc_vid_desc" "$gdc_path/devices_desktop.txt" || return 1
 }
-gdc_check_url () {
-    wget -U "$GDC_WGET_USR_AGENT" --no-cookies -t 1 -T 3 -q --spider "$1"
+__check_url () {
+    wget -U "$gdc_wget_usr_agent" --no-cookies -t 1 -T 3 -q --spider "$1"
 }
-gdc_get_uri_driver () {
+__get_uri_driver () {
     local url="http://us.download.nvidia.com"
-    GDC_DOWNLOAD_URL="$url$GDC_FILE_DATA"
-    $GDC_USE_INTL && GDC_DOWNLOAD_URL="${GDC_DOWNLOAD_URL//english/international}"
-    gdc_check_url "$GDC_DOWNLOAD_URL"
+    gdc_download_url="$url$gdc_file_data"
+    $gdc_use_intl && gdc_download_url="${gdc_download_url//english/international}"
+    __check_url "$gdc_download_url"
 }
-gdc_eval_versions () {
-    if [ "$GDC_INSTALLED_VER" -lt "$GDC_LATEST_VER" ]; then
-        GDC_UPDATE=true; GDC_REINSTALL=false
-    elif $GDC_REINSTALL && [ "$GDC_INSTALLED_VER" -eq "$GDC_LATEST_VER" ]; then
-        GDC_REINSTALL=true
-    elif [ "$GDC_INSTALLED_VER" -gt "$GDC_LATEST_VER" ]; then
-        GDC_FAIL=true
+__eval_versions () {
+    if [ "$gdc_installed_ver" -lt "$gdc_latest_ver" ]; then
+        gdc_update=true; gdc_reinstall=false
+    elif $gdc_reinstall && [ "$gdc_installed_ver" -eq "$gdc_latest_ver" ]; then
+        gdc_reinstall=true
+    elif [ "$gdc_installed_ver" -gt "$gdc_latest_ver" ]; then
+        gdc_fail=true
     fi
-    gdc_print_update_txt
+    __print_update_txt
 }
-gdc_print_update_txt () {
-    $GDC_FAIL && gdc_log_error "Your installed Version is somehow newer than NVIDIA latest version\n"
-    $GDC_REINSTALL && { printf "%sInstalled verison: $GDC_INSTALLED_VER_NAME, re-installing: $GDC_LATEST_VER_NAME\n"; return 0; }
-    $GDC_UPDATE || { printf "%sAlready latest version: $GDC_INSTALLED_VER_NAME\n"; return 0; }
-    $GDC_UPDATE && printf "%sNew version available"'!'"\nCurrent: $GDC_INSTALLED_VER_NAME\nLatest: $GDC_LATEST_VER_NAME\n"
+__print_update_txt () {
+    $gdc_fail && __log_error "Your installed Version is somehow newer than NVIDIA latest version\n"
+    $gdc_reinstall && { printf "%sInstalled verison: $gdc_installed_ver_name, re-installing: $gdc_latest_ver_name\n"; return 0; }
+    $gdc_update || { printf "%sAlready latest version: $gdc_installed_ver_name\n"; return 0; }
+    $gdc_update && printf "%sNew version available"'!'"\nCurrent: $gdc_installed_ver_name\nLatest: $gdc_latest_ver_name\n"
 }
-gdc_ask_do_install () {
+__ask_do_install () {
     local msg="Download, Extract, and Install new version"
-    gdc_ask "$msg ( $GDC_LATEST_VER_NAME ) now?"
+    __ask "$msg ( $gdc_latest_ver_name ) now?"
 }
-gdc_ask_do_reinstall () {
-    gdc_ask "Are you sure you would like to re-install version: $GDC_LATEST_VER_NAME?"
+__ask_do_reinstall () {
+    __ask "Are you sure you would like to re-install version: $gdc_latest_ver_name?"
 }
-gdc_check_valid_download  () {
+__check_valid_download  () {
     printf "%sMaking sure previously downloaded archive size is valid..."
-    local lsize="$(stat -c %s "$GDC_DL_PATH/$GDC_FILE_NAME" 2>/dev/null)"
-    local rsize="$(wget -U "$GDC_WGET_USR_AGENT" --no-cookies --spider -qSO- 2>&1 "$GDC_DOWNLOAD_URL" | awk '/Length/ {print $2}')"
+    local lsize="$(stat -c %s "$gdc_dl_path/$gdc_file_name" 2>/dev/null)"
+    local rsize="$(wget -U "$gdc_wget_usr_agent" --no-cookies --spider -qSO- 2>&1 "$gdc_download_url" | awk '/Length/ {print $2}')"
     [ "$lsize" -eq "$rsize" ] || { printf "Failed"; sleep 2; return 1; }
     printf "Done\n"
     printf "Testing archive integrity..."
-    "$GDC_S7BIN" t "$(cygpath -wa "$GDC_DL_PATH/$GDC_FILE_NAME")"
+    "$gdc_s7bin" t "$(cygpath -wa "$gdc_dl_path/$gdc_file_name")"
 }
-gdc_wget_latest_driver () {
-    printf "%sDownloading latest version into \"$GDC_DL_PATH\"..."
-    [ "$1" = true ] && rm -f "$GDC_DL_PATH/$GDC_FILE_NAME" || local opts='-N'
-    wget -U "$GDC_WGET_USR_AGENT" --no-cookies $opts -P "$GDC_DL_PATH" "$GDC_DOWNLOAD_URL"
+__wget_latest_driver () {
+    printf "%sDownloading latest version into \"$gdc_dl_path\"..."
+    [ "$1" = true ] && rm -f "$gdc_dl_path/$gdc_file_name" || local opts='-N'
+    wget -U "$gdc_wget_usr_agent" --no-cookies $opts -P "$gdc_dl_path" "$gdc_download_url"
 }
-gdc_ext_7z_latest_driver () {
+__ext_7z_latest_driver () {
     printf "%sExtracting new driver archive..."
-    local src="$(cygpath -wa "$GDC_DL_PATH/$GDC_FILE_NAME")"
-    GDC_EXTRACT_PATH="$GDC_EXT_PATH\GDC-$GDC_LATEST_VER-$(date +%m%y%S)"
-    "$GDC_S7BIN" x "$src" -o"$GDC_EXTRACT_PATH" $(printf -- '-xr!%s ' "${GDC_EXCL_PKGS[@]}") -y >/dev/null 2>&1 && printf "Done\n"
+    local src="$(cygpath -wa "$gdc_dl_path/$gdc_file_name")"
+    gdc_ext_path="$gdc_ext_path\GDC-$gdc_latest_ver-$(date +%m%y%S)"
+    "$gdc_s7bin" x "$src" -o"$gdc_ext_path" $(printf -- '-xr!%s ' "${gdc_excl_pkgs[@]}") -y >/dev/null 2>&1 && printf "Done\n"
 }
-gdc_gen_args_installer () {
-    GDC_INSTALLER_ARGS="-nofinish -passive -nosplash -noeula"
-    $GDC_SILENT && GDC_INSTALLER_ARGS="${GDC_INSTALLER_ARGS} -s"
-    $GDC_CLEAN_INSTALL && GDC_INSTALLER_ARGS="${GDC_INSTALLER_ARGS} -clean"
-    $GDC_ATTENDED && GDC_INSTALLER_ARGS=
-    $GDC_USE_REBOOT_PROMPT || GDC_INSTALLER_ARGS="${GDC_INSTALLER_ARGS} -n"
+__gen_args_installer () {
+    gdc_installer_args="-nofinish -passive -nosplash -noeula"
+    $gdc_silent && gdc_installer_args="${gdc_installer_args} -s"
+    $gdc_clean_install && gdc_installer_args="${gdc_installer_args} -clean"
+    $gdc_attended && gdc_installer_args=
+    $gdc_use_reboot_prompt || gdc_installer_args="${gdc_installer_args} -n"
 }
-gdc_exec_installer () {
-    gdc_gen_args_installer
+__exec_installer () {
+    __gen_args_installer
     printf "%sExecuting installer setup..."
-    cygstart -w --action=runas "$GDC_EXTRACT_PATH/setup.exe" "$GDC_INSTALLER_ARGS"
+    cygstart -w --action=runas "$gdc_ext_path/setup.exe" "$gdc_installer_args"
     local code="$?"
     printf "Done\n"
     return "$code"
 }
-gdc_eval_ver_installed () {
-    gdc_get_data_installed
-    gdc_get_ver_installed
-    [ "$GDC_INSTALLED_VER" -eq "$GDC_LATEST_VER" ]
+__eval_ver_installed () {
+    __get_data_installed
+    __get_ver_installed
+    [ "$gdc_installed_ver" -eq "$gdc_latest_ver" ]
 }
-gdc_exec_proc_szip () {
-    gdc_check_hash 7za && { GDC_S7BIN="7za"; return 0; }
-    gdc_find_path_szip || gdc_wget_szip || return 1
-    [ -z "$GDC_SEVEN_ZIP" ] && gdc_log_error "can't find 7-Zip installation, please install 7-Zip."
-    gdc_ask "7z.exe found. Create symbolic link for 7-Zip?" || { GDC_S7BIN="$GDC_SEVEN_ZIP"; return 0; }
+__exec_proc_szip () {
+    __check_hash 7za && { gdc_s7bin="7za"; return 0; }
+    __find_path_szip || __wget_szip || return 1
+    [ -z "$gdc_seven_zip" ] && __log_error "can't find 7-Zip installation, please install 7-Zip."
+    __ask "7z.exe found. Create symbolic link for 7-Zip?" || { gdc_s7bin="$gdc_seven_zip"; return 0; }
     local binpath="$(dirname "$(which ls)")"
-    gdc_check_path "$binpath" && ln -s "$GDC_SEVEN_ZIP" "$binpath"
+    __check_path "$binpath" && ln -s "$gdc_seven_zip" "$binpath"
 }
-gdc_find_path_szip () {
+__find_path_szip () {
     local pfiles="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files"
     local find="$(find "$pfiles" "$pfiles (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
     for i in $find; do
-        [ -x "$i" ] && gdc_check_hash "$i" && { GDC_SEVEN_ZIP="$i"; return 0; }
+        [ -x "$i" ] && __check_hash "$i" && { gdc_seven_zip="$i"; return 0; }
     done
     return 1
 }
-gdc_exec_msi_szip () {
+__exec_msi_szip () {
     local msiexec="$(cygpath -S)/msiexec.exe"
-    gdc_check_file x "$msiexec" || return 1
-    gdc_ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local passive="/passive"
-    cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "$GDC_DL_PATH/7z922-x64.msi")" || return 1
+    __check_file x "$msiexec" || return 1
+    __ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local passive="/passive"
+    cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "$gdc_dl_path/7z922-x64.msi")" || return 1
 }
-gdc_wget_szip () {
+__wget_szip () {
     local url="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
-    gdc_ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
-    gdc_get_path_download || { printf "error getting download path, try [-d /path]"; return 1; }
-    wget -U "$GDC_WGET_USR_AGENT" --no-cookies -N --no-check-certificate -P "$GDC_DL_PATH" "$url" && { gdc_exec_msi_szip || return 1; } || return 1
-    gdc_find_path_szip
+    __ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
+    __get_path_download || { printf "error getting download path, try [-d /path]"; return 1; }
+    wget -U "$gdc_wget_usr_agent" --no-cookies -N --no-check-certificate -P "$gdc_dl_path" "$url" && { __exec_msi_szip || return 1; } || return 1
+    __find_path_szip
 }
-gdc_get_array_deps () {
-    GDC_DEPS=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic' 'tar' 'gzip' 'logger')
+__get_array_deps () {
+    gdc_deps=('uname' 'cygpath' 'find' 'sed' 'cygstart' 'grep' 'wget' '7z' 'wmic' 'tar' 'gzip' 'logger')
 }
-gdc_check_deps () {
-    gdc_get_array_deps
-    for dep in "${GDC_DEPS[@]}"; do
+__check_deps () {
+    __get_array_deps
+    for dep in "${gdc_deps[@]}"; do
         case "$dep" in
-             wmic) gdc_check_hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; gdc_check_hash wmic || gdc_log_error "adding wmic to PATH" ;;
-               7z) gdc_check_hash 7z && GDC_S7BIN="7z" || { gdc_exec_proc_szip || gdc_log_error "Dependency not found :: 7z (7-Zip)"; } ;;
-                *) gdc_check_hash "$dep" || gdc_log_error "Dependency not found :: $dep" ;;
+             wmic) __check_hash wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; __check_hash wmic || __log_error "adding wmic to PATH" ;;
+               7z) __check_hash 7z && gdc_s7bin="7z" || { __exec_proc_szip || __log_error "Dependency not found :: 7z (7-Zip)"; } ;;
+                *) __check_hash "$dep" || __log_error "Dependency not found :: $dep" ;;
         esac
     done
 }
-gdc_get_options "$@" && shift $((OPTIND-1))
-gdc_check_deps
-gdc_check_cygwin || gdc_log_error "Cygwin not detected :: $(uname -o)"
-gdc_check_ver_os || gdc_log_error "Unsupported OS Version = $(check_ver_os true)"
-gdc_check_arch_win || gdc_log_error "Unsupported architecture = $(check_arch_win true)"
-gdc_get_data_installed || gdc_log_error "did not find NVIDIA graphics adapter"
-gdc_get_path_gdc || gdc_log_error "validating scripts execution path :: $GDC_PATH"
-gdc_get_path_root || gdc_log_error "validating root path :: $GDC_ROOT_PATH"
-gdc_get_path_download || gdc_log_error "validating download path :: $GDC_DL_PATH"
-gdc_ext_tar_devices || gdc_log_error "validating devices dbase :: $GDC_PATH/devices_notebook.txt"
-gdc_get_desc_adapter || gdc_log_error "not Geforce drivers compatabile adapter :: $GDC_VID_DESC"
-gdc_get_data_net || gdc_log_error "in online data query :: $GDC_FILE_DATA"
-gdc_get_ver_latest || gdc_log_error "invalid driver version string :: $GDC_LATEST_VER"
-gdc_get_ver_installed || gdc_log_error "invalid driver version string :: $GDC_INSTALLED_VER"
-gdc_eval_versions
-$GDC_CHECK_ONLY && { $GDC_UPDATE && exit 0 || exit 1; }
-$GDC_UPDATE || $GDC_REINSTALL || exit 0
-gdc_get_filename_latest || gdc_log_error "invalid file name returned :: $GDC_FILE_NAME"
-gdc_get_uri_driver || gdc_log_error "validating driver download uri :: $GDC_DOWNLOAD_URL"
-if $GDC_REINSTALL; then
-    gdc_ask_do_reinstall || gdc_log_error "User cancelled"
-    gdc_check_file "$GDC_DL_PATH/$GDC_FILE_NAME"
-    gdc_check_valid_download || gdc_wget_latest_driver true || gdc_log_error "wget downloading file :: $GDC_DOWNLOAD_URL"
-elif $GDC_UPDATE; then
-    gdc_ask_do_install || gdc_log_error "User cancelled"
-    gdc_wget_latest_driver || gdc_log_error "wget downloading file :: $GDC_DOWNLOAD_URL"
+__get_options "$@" && shift $((OPTIND-1))
+__check_deps
+__check_cygwin || __log_error "Cygwin not detected :: $(uname -o)"
+__check_ver_os || __log_error "Unsupported OS Version = $(check_ver_os true)"
+__check_arch_win || __log_error "Unsupported architecture = $(check_arch_win true)"
+__get_data_installed || __log_error "did not find NVIDIA graphics adapter"
+__get_path_gdc || __log_error "validating scripts execution path :: $gdc_path"
+__get_path_root || __log_error "validating root path :: $gdc_root_path"
+__get_path_download || __log_error "validating download path :: $gdc_dl_path"
+__ext_tar_devices || __log_error "validating devices dbase :: $gdc_path/devices_notebook.txt"
+__get_desc_adapter || __log_error "not Geforce drivers compatabile adapter :: $gdc_vid_desc"
+__get_data_net || __log_error "in online data query :: $gdc_file_data"
+__get_ver_latest || __log_error "invalid driver version string :: $gdc_latest_ver"
+__get_ver_installed || __log_error "invalid driver version string :: $gdc_installed_ver"
+__eval_versions
+$gdc_check_only && { $gdc_update && exit 0 || exit 1; }
+$gdc_update || $gdc_reinstall || exit 0
+__get_filename_latest || __log_error "invalid file name returned :: $gdc_file_name"
+__get_uri_driver || __log_error "validating driver download uri :: $gdc_download_url"
+if $gdc_reinstall; then
+    __ask_do_reinstall || __log_error "User cancelled"
+    __check_file "$gdc_dl_path/$gdc_file_name"
+    __check_valid_download || __wget_latest_driver true || __log_error "wget downloading file :: $gdc_download_url"
+elif $gdc_update; then
+    __ask_do_install || __log_error "User cancelled"
+    __wget_latest_driver || __log_error "wget downloading file :: $gdc_download_url"
 fi
-gdc_check_mkdir "$GDC_ROOT_PATH/NVIDIA" || gdc_log_error "creating path :: $GDC_ROOT_PATH/NVIDIA"
-gdc_ext_7z_latest_driver || gdc_log_error "extracting new driver archive :: $GDC_EXT_PATH"
-gdc_exec_installer || gdc_log_error "Installation failed or user interupted"
-gdc_get_ver_installed true || gdc_log_error "invalid driver version string :: $GDC_INSTALLED_VER"
-gdc_eval_ver_installed || gdc_log_error "After all that your driver version didn't change!"
+__check_mkdir "$gdc_root_path/NVIDIA" || __log_error "creating path :: $gdc_root_path/NVIDIA"
+__ext_7z_latest_driver || __log_error "extracting new driver archive :: $gdc_ext_path"
+__exec_installer || __log_error "Installation failed or user interupted"
+__get_ver_installed true || __log_error "invalid driver version string :: $gdc_installed_ver"
+__eval_ver_installed || __log_error "After all that your driver version didn't change!"
 printf "Driver update successfull!"
 exit 0
