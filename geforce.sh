@@ -178,14 +178,11 @@ get_data_net () {
     [[ "$GDC_FILE_DATA" == '/Windows/'*'.exe' ]]
 }
 get_filename_latest () {
-   #[ "$1" = true ] && get_data_net
     GDC_FILE_NAME="${GDC_FILE_DATA##/*/}"
     $GDC_USE_INTL && GDC_FILE_NAME="${GDC_FILE_NAME/english/international/}"
-    GDC_FILE_NAME="$(printf "$GDC_FILE_NAME" | awk -F\. '/exe/ {print $(NF-1)}')"
-    [ "$GDC_FILE_NAME" != "exe" ]
+    printf "$GDC_FILE_NAME" | grep -Eq "^$GDC_LATEST_VER_NAME\-.*\.exe$" 
 }
 get_ver_latest () {
-    #[ "$1" = true ] && get_data_net
     GDC_LATEST_VER_NAME="$(printf "%s$GDC_FILE_DATA" | cut -d\/ -f3)"
     GDC_LATEST_VER="${GDC_LATEST_VER_NAME//\./}"
     printf "$GDC_LATEST_VER" | grep -Eq '^[0-9]+$'
@@ -232,7 +229,7 @@ echo_update_txt () {
     $GDC_FAIL && log_error "Your installed Version is somehow newer than NVIDIA latest version\n"
     $GDC_REINSTALL && { printf "%sInstalled verison: $GDC_INSTALLED_VER_NAME, re-installing: $GDC_LATEST_VER_NAME\n"; return 0; }
     $GDC_UPDATE || { printf "%sAlready latest version: $GDC_INSTALLED_VER_NAME\n"; return 0; }
-    $GDC_UPDATE && printf "%sNew version available"'!'"\nCurrent: $GDC_INSTALLED_VER_NAME\nLatest: $GDC_LATEST_VER_NAME"
+    $GDC_UPDATE && printf "%sNew version available"'!'"\nCurrent: $GDC_INSTALLED_VER_NAME\nLatest: $GDC_LATEST_VER_NAME\n"
 }
 ask_do_install () {
     local msg="Download, Extract, and Install new version"
