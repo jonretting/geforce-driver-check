@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-GDC_VERSION="1.078-1"
+GDC_VERSION="1.079"
 
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
 GDC_DL_PATH="${GDC_DL_PATH:=}"  # download path ex: GDC_DL_PATH="${GDC_DL_PATH:=/this/download/path}"
@@ -30,7 +30,7 @@ GDC_WGET_USR_AGENT="${GDC_WGET_USR_AGENT:-Mozilla/5.0 (Windows NT 6.1; WOW64; rv
 # remove these nvidia packages from driver install
 GDC_EXCL_PKGS=("GFExperience*" "NV3DVision*" "Display.Update" "Display.Optimus" "Display.NView" "Network.Service" "MS.NET" "ShadowPlay" "LEDVisualizer" "NvVAD")
 
-echo_usage () {
+print_usage () {
     printf "%s\n Geforce Driver Check $GDC_VERSION
  Desc: Cleans unused/old inf packages, checks for new version, and installs new version)
  Usage: geforce.sh [-asycCAirVh] [-d=\"/download/path\"]
@@ -64,8 +64,8 @@ get_options () {
             A) GDC_ATTENDED=true; GDC_EXCL_PKGS=;;
             i) GDC_USE_INTL=true ;;
             r) GDC_USE_REBOOT_PROMPT=true ;;
-            h) echo_usage; exit 0 ;;
-            *) echo_usage; exit 1 ;;
+            h) print_usage; exit 0 ;;
+            *) print_usage; exit 1 ;;
         esac
     done
 }
@@ -223,9 +223,9 @@ eval_versions () {
     elif [ "$GDC_INSTALLED_VER" -gt "$GDC_LATEST_VER" ]; then
         GDC_FAIL=true
     fi
-    echo_update_txt
+    print_update_txt
 }
-echo_update_txt () {
+print_update_txt () {
     $GDC_FAIL && log_error "Your installed Version is somehow newer than NVIDIA latest version\n"
     $GDC_REINSTALL && { printf "%sInstalled verison: $GDC_INSTALLED_VER_NAME, re-installing: $GDC_LATEST_VER_NAME\n"; return 0; }
     $GDC_UPDATE || { printf "%sAlready latest version: $GDC_INSTALLED_VER_NAME\n"; return 0; }
