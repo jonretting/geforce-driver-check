@@ -175,7 +175,7 @@ __get_data_net () {
     $gdc_notebook && local link+="$notebook_id" || local link+="$desktop_id"
     local link="$(__get_wget "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F\' 'NR==1 {print $2}')"
     gdc_file_data="$(__get_wget "$link" | awk 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
-    [[ "$gdc_file_data" == '/Windows/'*'.exe' ]]
+    printf "$gdc_file_data" | grep -Eq "/Windows/.*\.exe"
 }
 __get_filename_latest () {
     gdc_file_name="${gdc_file_data##/*/}"
