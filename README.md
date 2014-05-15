@@ -13,6 +13,9 @@ Copyright (c) 2014 Jon Retting
 
 ### Release Notes:
 
+#### 1.09 : (GitHub only)
+- removed various bashisms
+
 #### 1.082 :
 - bug fix filename validation per extraction error
 - include 7za as valid 7z binary dependency

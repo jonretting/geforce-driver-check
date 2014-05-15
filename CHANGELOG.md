@@ -2,6 +2,9 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.09 :
+- removed various bashisms
+
 #### 1.082 :
 - bug fix filename validation per extraction error
 - include 7za as valid 7z binary dependency
