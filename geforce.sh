@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-gdc_version="1.082"
+gdc_version="1.09"
 
 # cutomizable defaults (respects environment defined vars) inline cmd over-rides both
 gdc_dl_path="${gdc_dl_path:=}"  # download path ex: gdc_dl_path="${gdc_dl_path:=/this/download/path}"
