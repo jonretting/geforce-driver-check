@@ -179,13 +179,13 @@ __get_data_net () {
 }
 __get_filename_latest () {
     gdc_file_name="${gdc_file_data##/*/}"
-    $gdc_use_intl && gdc_file_name="${gdc_file_name/english/international/}"
+    $gdc_use_intl && gdc_file_name="$(printf "$gdc_file_name" | sed 's/english/international/')"
     printf "$gdc_file_name" | grep -Eq "^$gdc_latest_ver_name\-.*\.exe$" 
 }
 __get_ver_latest () {
     gdc_latest_ver_name="$(printf "%s$gdc_file_data" | cut -d\/ -f3)"
-    gdc_latest_ver="${gdc_latest_ver_name//\./}"
-    printf "$gdc_latest_ver" | grep -Eq '^[0-9]+$'
+    gdc_latest_ver="$(printf "$gdc_latest_ver_name" | sed 's/\.//g')"
+    printf "$gdc_latest_ver" | grep -Eq '^[0-9]{5}$'
 }
 __get_data_installed () {
     gdc_installed_data="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d')"
@@ -210,7 +210,7 @@ __check_url () {
 __get_uri_driver () {
     local url="http://us.download.nvidia.com"
     gdc_download_url="$url$gdc_file_data"
-    $gdc_use_intl && gdc_download_url="${gdc_download_url//english/international}"
+    $gdc_use_intl && gdc_download_url="$(printf "$gdc_download_url" | sed 's/english/international')"
     __check_url "$gdc_download_url"
 }
 __eval_versions () {
