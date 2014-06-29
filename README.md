@@ -46,21 +46,23 @@ Copyright (c) 2014 Jon Retting
 INFO:
 -----
 - Requires CYGWIN
+- No configuration needed to run, simply bash/sh/dash/ash geforce.sh
 - Currently supports: Windows 7 x64, Server 2008 r2, Windows 8/8.1 x64, (Server 2012 Untested)
 - Works with Desktop and Notebook Graphics adapters
-- No configuration needed to run, simply bash/sh/dash/ash geforce.sh
 - Can be called from anywhere (supports alias/symlinks/shortcuts)
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
-- Option to Force-Reinstall latest version will verify integrity of downloaded archive, and act accordingly
-- Will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
-- If 7zip is not found, GDC will prompt to download x64 msi, then prompt to attended or unattended install
-- Supports the international driver package version when "-i" is invoked
-- Default config will only install Display Driver, HD Audio, and PshyX
-- User interaction required before download/install procedure (unless [-s] or [-y] is invoked)
+- Supports the international driver package version when [-i] is invoked
+- User interaction required before download/install procedure
+- Go fully unattended with the [-s] silent install option or [-y] yes-to-all
+- Option to Force-Reinstall latest version will verify integrity of downloaded archive and re-install
+- Default config will only install Display Driver, HD-Audio, and PshyX (customize in config.conf)
+- Specify default configuration options in config.conf
 - Displays Nvidia installation progress box
-- Runs driver setup with all driver packages when [-A] is invoked enables [-a] as well
 - Only check if a new version is available with [-C]
+- Runs driver setup with all driver packages when [-A] is invoked activate attended install
+- Searches for 7-Zip (7z.exe) will prompt for optional creation of symlink
+- If 7zip is not found, GDC will prompt to download x64 msi, then prompt to install
 
 DEPENDENCIES:
 -------------
