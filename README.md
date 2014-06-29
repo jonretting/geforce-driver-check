@@ -6,12 +6,21 @@ Copyright (c) 2014 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.082](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.915](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
-#### [v1.078](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.078.zip/download)
-#### [v1.076-1](http://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.076-1.zip/download)
+#### [v1.082](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.082.zip/download)
+#### [v1.082](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.078.zip/download)
 
 ### Release Notes:
+
+#### 1.0915 :
+- posix compliancy
+- removed bash arrays
+- use command instead of hash
+- source in functions (func.src)
+- source in config (config.conf)
+- removed superfluous files
+- update README info
 
 #### 1.09 : (GitHub only)
 - removed various bashisms
@@ -34,38 +43,28 @@ Copyright (c) 2014 Jon Retting
 - drop sed for substring match replacement
 - add quoting to prevent some word splitting where possible
 
-#### 1.076-1 :
-- fix wget bad var name for url
-- fix installer exit code issue
-- all function names changed for better readability, and follows common naming conventions
-- tab character indents replaced with four spaces per indent
-- all vars renamed for better readability, and given GDC_ prefix to avoid any shell  confusion
-- better Win OS architecture detection (no sub-shell), and more descriptive error
-- better Win OS version detection (no-sub-shell), and more descriptive error
-
 INFO:
 -----
 - Requires CYGWIN
 - Currently supports: Windows 7 x64, Server 2008 r2, Windows 8/8.1 x64, (Server 2012 Untested)
 - Works with Desktop and Notebook Graphics adapters
-- No configuration needed to run, simply bash the slut
+- No configuration needed to run, simply bash/sh/dash/ash geforce.sh
+- Can be called from anywhere (supports alias/symlinks/shortcuts)
 - Compares your current version with latest available from Nvidias website
 - Downloads latest version if current version is older
 - Option to Force-Reinstall latest version will verify integrity of downloaded archive, and act accordingly
 - Will search your Program Files (x86/x64) for 7-Zip (7z.exe) will prompt for optional creation of symlink'
 - If 7zip is not found, GDC will prompt to download x64 msi, then prompt to attended or unattended install
 - Supports the international driver package version when "-i" is invoked
-- Only installs Display Driver, HD Audio, and PshyX
+- Default config will only install Display Driver, HD Audio, and PshyX
 - User interaction required before download/install procedure (unless [-s] or [-y] is invoked)
 - Displays Nvidia installation progress box
 - Runs driver setup with all driver packages when [-A] is invoked enables [-a] as well
-- You can check and see if a new version is available with [-C] won't prompt to download and continue
-- Extracts new display driver by default to /cygdrive/c/NVIDIA/GDC-"driver-ver#"
-- The -r option will enable Nvidia driver installer to prompt user to reboot if needed (untested)
+- Only check if a new version is available with [-C]
 
 DEPENDENCIES:
 -------------
-wget, 7-Zip (prompts to download/install 7-Zip if not found)
+wget, 7-Zip
 
 OPTIONS:
 --------
@@ -109,17 +108,13 @@ EXAMPLES:
 	`./geforce.sh -d "/home/me/Downloads" -s -y`
 
 ### TODO:
-- * add re-install option of any previously GDC installed driver package, and just rollback
-- *! trap ctrl-c/z and kill anything and everything script executed
+- *add GDC rollback functionality to previously installed driver
+- *trap ctrl-c/z and kill anything and everything script executed
 - *use logger instead of tee, use custom logit to windows events
 - *make compatible with multiple installed nvidia card environments
 - remove .sh suffix for release candidate
 - correct handling of assorted nvidia graphics hardware
 - create windows shortcuts to geforce.sh option
-- add notification email switch when update is available
-- make crontab friendly
-- add long format options --re-install
 - allow for other types ex: x86 version, only whql
-- add geforce inspector tool install options
-- add ntune o/c settings option show oc pane
+- *add geforce inspector tool install options
 - add driver purge style installation, complete graphics driver removal

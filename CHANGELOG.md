@@ -2,6 +2,15 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.0915 :
+- posix compliancy
+- removed bash arrays
+- use command instead of hash
+- source in functions (func.src)
+- source in config (config.conf)
+- removed superfluous files
+- update README info
+
 #### 1.09 :
 - removed various bashisms
 
