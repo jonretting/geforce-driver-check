@@ -70,7 +70,6 @@ __get_defaults () {
     gdc_use_reboot_prompt=false
     gdc_update=false
     gdc_fail=false
-    gdc_script_path="$0"
 }
 __ask () {
     while true; do

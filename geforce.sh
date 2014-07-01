@@ -19,10 +19,10 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-gdc_version="1.0915"
+gdc_version="1.0916"
 
 __get_path_gdc () {
-    local src="$gdc_script_path"
+    local src="$0"
     while [ -h "$src" ]; do
         local dir="$(cd -P "$(dirname "$src")" && pwd)"
         local src="$(readlink "$src")"
