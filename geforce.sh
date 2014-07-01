@@ -30,10 +30,10 @@ __get_path_gdc () {
         local c=$((c+1)); [ "$c" -gt 3 ] && return 1
     done
     gdc_path="$(cd -P "$(dirname "$src")" && pwd)"
-    [ -d "$gdc_path" ] && [ -r "$gdc_path" ] || return 1
+    [ -e "$gdc_path/geforce.sh" ] && [ -r "$gdc_path" ] || return 1
 }
 
-__get_path_gdc || printf "Error discovering path to geforce.sh script"
+__get_path_gdc || printf "Error determining GDC path\n"
 . "$gdc_path/func.src"
 . "$gdc_path/config.conf"
 

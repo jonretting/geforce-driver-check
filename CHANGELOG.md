@@ -2,6 +2,9 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.0915-1:
+- fixed pathing issue
+
 #### 1.0915 :
 - posix compliancy
 - removed bash arrays

@@ -1,4 +1,4 @@
-Geforce Driver Check (GDC)
+edGeforce Driver Check (GDC)
 ==========================
 ### Checks for new Nvidia Display Drivers then does an automated unattended install, or with many more options.
 Copyright (c) 2014 Jon Retting
@@ -6,12 +6,15 @@ Copyright (c) 2014 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.915](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.915-1](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
 #### [v1.082](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.082.zip/download)
 #### [v1.082](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.078.zip/download)
 
 ### Release Notes:
+
+#### 1.0915-1:
+- fixed pathing issue
 
 #### 1.0915 :
 - posix compliancy
