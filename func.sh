@@ -1,3 +1,5 @@
+# This file is sourced by geforce.sh and should not include a shebang
+#
 # NAME: Geforce Driver Check (GDC) geforce-driver-check
 # DESC: Checks for new Nvidia Display Drivers then does an automatted unattended install, or with many more options.
 # GIT: git@github.com:jonretting/geforce-driver-check.git

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 # NAME: Geforce Driver Check (GDC) geforce-driver-check
 # DESC: Checks for new Nvidia Display Drivers then does an automatted unattended install, or with many more options.
 # GIT: git@github.com:jonretting/geforce-driver-check.git
@@ -19,8 +19,10 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-gdc_version="1.0916"
+gdc_version="1.0917"
 
+# determines absolute parent path of geforce.sh execution
+# allows use of symlink/alias/function geforce.sh execution
 __get_path_gdc () {
     local src="$0"
     while [ -h "$src" ]; do
@@ -30,17 +32,29 @@ __get_path_gdc () {
         local c=$((c+1)); [ "$c" -gt 3 ] && return 1
     done
     gdc_path="$(cd -P "$(dirname "$src")" && pwd)"
-    [ -e "$gdc_path/geforce.sh" ] && [ -r "$gdc_path" ] || return 1
+    [ -x "$gdc_path/geforce.sh" ] && [ -r "$gdc_path" ] || return 1
 }
 
+# determine the absolute parent path to geforce.sh
 __get_path_gdc || printf "Error determining GDC path\n"
-. "$gdc_path/func.src"
+
+# source in functions and user configurable options
+. "$gdc_path/func.sh"
 . "$gdc_path/config.conf"
 
+# process command line options/arguements
 __get_options "$@" && shift $((OPTIND-1))
+
+# validate script dependencies, dies inside using __log_error
 __check_deps
+
+# validate cygwin installation
 __check_cygwin || __log_error "Cygwin not detected :: $(uname -o)"
+
+# validate compatable Windows version >6.1
 __check_ver_os || __log_error "Unsupported OS Version = $(check_ver_os true)"
+
+# validate Windows architecture as x86_64 using wmic
 __check_arch_win || __log_error "Unsupported architecture = $(check_arch_win true)"
 __get_data_installed || __log_error "did not find NVIDIA graphics adapter"
 __get_path_gdc || __log_error "validating scripts execution path :: $gdc_path"
