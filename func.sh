@@ -37,17 +37,19 @@ __print_usage () {
  -C    Only check for new version (returns version#, 0=update available, 1=no update)
  -A    Enable all Nvidia packages (GFExperience, NV3DVision, etc) uses attended install
  -i    Download international driver package (driver package for non English installs)
- -r    Don't disable reboot prompt when reboot is needed (could be buged)
+ -F    Force running installer even if no NVIDIA card detects (New Installs)
+ -r    Don't disable reboot prompt when reboot is needed
  -V    Displays version info
  -h    this crupt\n"
 }
 __get_options () {
     __get_defaults
-    local opts="asyd:cRVCAirh"
+    local opts="asyd:cRVCAirhF"
     while getopts "$opts" gdc_options; do
         case "$gdc_options" in
             a) gdc_attended=true ;;
             s) gdc_silent=true ;;
+            F) gdc_force_install=true ;;
             y) gdc_yestoall=true ;;
             d) gdc_dl_path="$OPTARG" ;;
             c) gdc_clean_install=true ;;
@@ -72,6 +74,7 @@ __get_defaults () {
     gdc_use_reboot_prompt=false
     gdc_update=false
     gdc_fail=false
+    gdc_force_install=false
 }
 __ask () {
     while true; do
@@ -80,17 +83,66 @@ __ask () {
         [ -z "$rpy" ] && local rpy="$def"; case "$rpy" in Y*|y*) return 0;; N*|n*) return 1;;1*) return 0;;2*) return 1;;esac
     done
 }
+__fix_oldsymlinks () {
+    which geforce && __get_symlinks
+}
+__get_symlinks () {
+    which geforce
+}
 __log_error () {
     printf "%s$(date): Error: geforce.sh : $1" | tee -a /var/log/messages
     exit 1
 }
-__check_command () {
-    command -v "$1" >/dev/null 2>&1
+__get_cache () {
+    __check_file rw "$gdc_cache" || { >"$gdc_cache" || __log_error "reading cache file :: $gdc_cache"; }
+    __load_cache || return 1
+}
+__check_var () {
+    if [ -n "$1" ] && [ -n "$2" ]; then
+        [ "$1" = "$2" ] && return 0 || return 1
+    fi
+    [ -n "$1" ]
+}
+__write_cache () {
+    __rm_cache "$1"
+    printf "%s$1=\"$2\"\n" >> "$gdc_cache" || __log_error "writing cache file :: $gdc_cache"
+    $3 && __check_cache "$1" "$2"
+}
+__check_cache () {
+        if __check_var "$1" "$2"; then
+            "$gdc_grep" "$1" "$gdc_cache" | "$gdc_grep" -q "$2" && return 0 || return 1
+        else
+            "$gdc_grep" "$1" "$gdc_cache" | "$gdc_grep" -q "$2" || __load_cache
+            __check_var "$1" "$2" && return 0 || return 1
+        fi
+    if [ -z "$2" ]; then
+        if __check_var "$1"; then
+            "$gdc_grep" "$1" "$gdc_cache" && return 1
+        else
+            "$gdc_grep" "$1" "$gdc_cache" || __load_cache
+            __check_var "$1" && return 1
+        fi
+    fi
+    return 0
+}
+__rm_cache () {
+    #hash $gdc_sed >/dev/null 2>&1 || gdc_sed="$gdc_path/bin/sed.exe"
+    ${gdc_sed} -i 's/\('"$1"'=\).*/\1/g' "$gdc_cache"
+    __load_cache || return 1
+}
+__clear_cache () {
+    "$gdc_sed" -i 's/\(.*\=\).*/\1/g' "$gdc_cache"
+    __load_cache || return 1
+    >"$gdc_cache" || __log_error "error crearing cache file :: $gdc_cache"
+}
+__load_cache () {
+    . "$gdc_cache" || __log_error "sourcing cache file :: $gdc_cache"
 }
 __check_file () {
     while [ ${#} -gt 0 ]; do
         case "$1" in
             x) [ -x "$2" ] || return 1 ;;
+           rw) [ -r "$2" ] && [ -w "$2" ] || return 1 ;;
             r) [ -r "$2" ] || return 1 ;;
             s) [ -s "$2" ] || return 1 ;;
            rs) [ -r "$2" ] && [ -s "$2" ] || return 1 ;; #file read > 0
@@ -114,87 +166,91 @@ __check_mkdir () {
     __check_path "$1" || { mkdir -p "$1" || __log_error "error creating folder paths"; }
 }
 __check_cygwin () {
-    [ "$(uname -o)" = "Cygwin" ]
+    [ "$("$gdc_uname" -o)" = "Cygwin" ]
 }
 __check_ver_os () {
-    [ "$1" = true ] && { wmic os get version /value | grep -Eo '[^=]*$'; return $?; }
-    wmic os get version /value | grep -Eq '6\.[1-3]{1}.*'
+    [ "$1" = true ] && { wmic os get version /value | "$gdc_grep" -Eo '[^=]*$'; return $?; }
+    wmic os get version /value | "$gdc_grep" -Eq '6\.[1-3]{1}.*'
 }
 __check_arch_win () {
-    [ "$1" = true ] && { wmic OS get OSArchitecture /value | grep -Eo '[^=]*$'; return $?; }
-    wmic OS get OSArchitecture /value | grep -q '64-bit'
+    [ "$1" = true ] && { wmic OS get OSArchitecture /value | "$gdc_grep" -Eo '[^=]*$'; return $?; }
+    wmic OS get OSArchitecture /value | "$gdc_grep" -q '64-bit'
 }
 __ext_tar_devices () {
     __check_files rs "$gdc_path/devices_notebook.txt $gdc_path/devices_desktop.txt" && return 0
-    tar xf "$gdc_path/devices_dbase.tar.gz" -C "$gdc_path"
+    "$gdc_tar" -xf "$gdc_path/devices_dbase.tar.xz" -C "$gdc_path"
     __check_files rs "$gdc_path/devices_notebook.txt $gdc_path/devices_desktop.txt"
 }
 __get_path_root () {
-    [ -n "$SYSTEMDRIVE" ] && gdc_root_path="$(cygpath "$SYSTEMDRIVE")"
+    [ -n "$SYSTEMDRIVE" ] && gdc_root_path="$("$gdc_cygpath" "$SYSTEMDRIVE")"
     __check_path "$gdc_root_path" && return 0
-    gdc_root_path="$(cd -P "$(cygpath -W)" && { cd .. && pwd; } || return 1)"
+    gdc_root_path="$(cd -P "$("$gdc_cygpath" -W)" && { cd .. && pwd; } || return 1)"
     __check_path "$gdc_root_path" && return 0
-    gdc_root_path="$(which explorer.exe | sed 's/.Windows\/explorer\.exe//')"
+    gdc_root_path="$(which explorer.exe | "$gdc_sed" 's/.Windows\/explorer\.exe//')"
     __check_path "$gdc_root_path"
 }
 __get_path_download () {
     [ -n "$SYSTEMDRIVE" ] && __check_path "$gdc_dl_path" && return 0
-    gdc_dl_path="$(cygpath -O | sed 's/Documents/Downloads/')"
+    gdc_dl_path="$("$gdc_cygpath" -O | "$gdc_sed" 's/Documents/Downloads/')"
     __check_path "$gdc_dl_path" && return 0
     gdc_dl_path="$gdc_ext_path/Downloads"
     __check_mkdir "$gdc_dl_path" && return 0
-    gdc_dl_path="$(cd -P "$(cygpath -O)" && { cd ../Downloads && pwd; } || return 1)"
+    gdc_dl_path="$(cd -P "$("$gdc_cygpath" -O)" && { cd ../Downloads && pwd; } || return 1)"
     __check_path "$gdc_dl_path"
 }
 __get_wget () {
-    wget -U "$gdc_wget_usr_agent" --no-cookies -qO- 2>/dev/null "$1"
+    "$gdc_wget" -U "$gdc_wget_usr_agent" --no-cookies -qO- 2>/dev/null "$1"
 }   
 __get_data_net () {
     local desktop_id="95"
     local notebook_id="92"
     local link="http://www.nvidia.com/Download/processFind.aspx?osid=19&lid=1&lang=en-us&psid="
     $gdc_notebook && local link+="$notebook_id" || local link+="$desktop_id"
-    local link="$(__get_wget "$link" | awk '/driverResults.aspx/ {print $4}' | awk -F\' 'NR==1 {print $2}')"
-    gdc_file_data="$(__get_wget "$link" | awk 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
-    printf "$gdc_file_data" | grep -Eq "/Windows/.*\.exe"
+    local link="$(__get_wget "$link" | "$gdc_awk" '/driverResults.aspx/ {print $4}' | "$gdc_awk" -F\' 'NR==1 {print $2}')"
+    gdc_file_data="$(__get_wget "$link" | "$gdc_awk" 'BEGIN {FS="="} /url=/ {gsub("&lang","");print $3}')"
+    printf "$gdc_file_data" | "$gdc_grep" -Eq "/Windows/.*\.exe"
 }
 __get_filename_latest () {
     gdc_file_name="${gdc_file_data##/*/}"
-    $gdc_use_intl && gdc_file_name="$(printf "$gdc_file_name" | sed 's/english/international/')"
-    printf "$gdc_file_name" | grep -Eq "^$gdc_latest_ver_name\-.*\.exe$" 
+    $gdc_use_intl && gdc_file_name="$(printf "$gdc_file_name" | "$gdc_sed" 's/english/international/')"
+    printf "$gdc_file_name" | "$gdc_grep" -Eq "^$gdc_latest_ver_name\-.*\.exe$" 
 }
 __get_ver_latest () {
-    gdc_latest_ver_name="$(printf "%s$gdc_file_data" | cut -d\/ -f3)"
-    gdc_latest_ver="$(printf "$gdc_latest_ver_name" | sed 's/\.//g')"
-    printf "$gdc_latest_ver" | grep -Eq '^[0-9]{5}$'
+    gdc_latest_ver_name="$(printf "%s$gdc_file_data" | "$gdc_awk" -F\/ '{print $3}')"
+    gdc_latest_ver="$(printf "$gdc_latest_ver_name" | "$gdc_sed" 's/\.//g')"
+    printf "$gdc_latest_ver" | "$gdc_grep" -Eq '^[0-9]{5}$'
 }
 __get_data_installed () {
-    gdc_installed_data="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | sed 's/\r//g;s/^M$//;/^$/d')"
-    printf "%s$gdc_installed_data" | grep -qo "NVIDIA"
+    $gdc_force_install && return 0
+    gdc_installed_data="$(wmic PATH Win32_videocontroller WHERE "AdapterCompatibility='NVIDIA' AND Availability='3'" GET DriverVersion,Description /value | "$gdc_sed" 's/\r//g;s/^M$//;/^$/d')"
+    printf "%s$gdc_installed_data" | "$gdc_grep" -qo "NVIDIA"
 }
 __get_ver_installed () {
     [ "$1" = true ] && __get_data_installed
-    gdc_installed_ver="$(printf "%s${gdc_installed_data##*=}" | sed 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
-    gdc_installed_ver_name="$(printf "%s$gdc_installed_ver" | sed 's/./.&/4')"
-    printf "$gdc_installed_ver" | grep -Eq '^[0-9]+$'
+    gdc_installed_ver="$(printf "%s${gdc_installed_data##*=}" | "$gdc_sed" 's/\.//g;s/^.*\(.\{5\}\)$/\1/')"
+    gdc_installed_ver_name="$(printf "%s$gdc_installed_ver" | "$gdc_sed" 's/./.&/4')"
+    $gdc_force_install && return 0
+    printf "$gdc_installed_ver" | "$gdc_grep" -Eq '^[0-9]+$'
 }
 __get_desc_adapter () {
     gdc_notebook=false
-    gdc_vid_desc="$(printf "%s$gdc_installed_data" | awk -F\= '/NVIDIA/ {print $2}')"
+    gdc_vid_desc="$(printf "%s$gdc_installed_data" | "$gdc_awk" -F\= '/NVIDIA/ {print $2}')"
+    $gdc_force_install && return 0
     [ -z "$gdc_vid_desc" ] && return 1
-    grep -wqs "$gdc_vid_desc" "$gdc_path/devices_notebook.txt" && { gdc_notebook=true; return 0; }
-    grep -wqs "$gdc_vid_desc" "$gdc_path/devices_desktop.txt" || return 1
+    "$gdc_grep" -wqs "$gdc_vid_desc" "$gdc_path/devices_notebook.txt" && { gdc_notebook=true; return 0; }
+    "$gdc_grep" -wqs "$gdc_vid_desc" "$gdc_path/devices_desktop.txt" || return 1
 }
 __check_url () {
-    wget -U "$gdc_wget_usr_agent" --no-cookies -t 1 -T 3 -q --spider "$1"
+    "$gdc_wget" -U "$gdc_wget_usr_agent" --no-cookies -t 1 -T 3 -q --spider "$1"
 }
 __get_uri_driver () {
     local url="http://us.download.nvidia.com"
     gdc_download_url="$url$gdc_file_data"
-    $gdc_use_intl && gdc_download_url="$(printf "$gdc_download_url" | sed 's/english/international')"
+    $gdc_use_intl && gdc_download_url="$(printf "$gdc_download_url" | "$gdc_sed" 's/english/international')"
     __check_url "$gdc_download_url"
 }
 __eval_versions () {
+    $gdc_force_install && { gdc_update=true; return 0; }
     if [ "$gdc_installed_ver" -lt "$gdc_latest_ver" ]; then
         gdc_update=true; gdc_reinstall=false
     elif $gdc_reinstall && [ "$gdc_installed_ver" -eq "$gdc_latest_ver" ]; then
@@ -220,22 +276,22 @@ __ask_do_reinstall () {
 __check_valid_download  () {
     printf "%sMaking sure previously downloaded archive size is valid..."
     local lsize="$(stat -c %s "$gdc_dl_path/$gdc_file_name" 2>/dev/null)"
-    local rsize="$(wget -U "$gdc_wget_usr_agent" --no-cookies --spider -qSO- 2>&1 "$gdc_download_url" | awk '/Length/ {print $2}')"
+    local rsize="$("$gdc_wget" -U "$gdc_wget_usr_agent" --no-cookies --spider -qSO- 2>&1 "$gdc_download_url" | "$gdc_awk" '/Length/ {print $2}')"
     [ "$lsize" -eq "$rsize" ] || { printf "Failed"; sleep 2; return 1; }
     printf "Done\n"
     printf "Testing archive integrity..."
-    "$gdc_s7bin" t "$(cygpath -wa "$gdc_dl_path/$gdc_file_name")"
+    "$gdc_7za" t "$("$gdc_cygpath" -wa "$gdc_dl_path/$gdc_file_name")"
 }
 __wget_latest_driver () {
     printf "%sDownloading latest version into \"$gdc_dl_path\"..."
     [ "$1" = true ] && rm -f "$gdc_dl_path/$gdc_file_name" || local opts='-N'
-    wget -U "$gdc_wget_usr_agent" --no-cookies $opts -P "$gdc_dl_path" "$gdc_download_url"
+    "$gdc_wget" -U "$gdc_wget_usr_agent" --no-cookies $opts -P "$gdc_dl_path" "$gdc_download_url"
 }
 __ext_7z_latest_driver () {
     printf "%sExtracting new driver archive..."
-    local src="$(cygpath -wa "$gdc_dl_path/$gdc_file_name")"
+    local src="$("$gdc_cygpath" -wa "$gdc_dl_path/$gdc_file_name")"
     gdc_ext_path="$gdc_ext_path\GDC-$gdc_latest_ver-$(date +%m%y%S)"
-    "$gdc_s7bin" x "$src" -o"$gdc_ext_path" $(printf -- '-xr!%s ' $gdc_excl_pkgs) -y >/dev/null 2>&1 && printf "Done\n"
+    "$gdc_7za"  x "$src" -o"$gdc_ext_path" $(printf -- '-xr!%s ' $gdc_excl_pkgs) -y >/dev/null 2>&1 && printf "Done\n"
 }
 __gen_args_installer () {
     gdc_installer_args="-nofinish -passive -nosplash -noeula"
@@ -247,7 +303,7 @@ __gen_args_installer () {
 __exec_installer () {
     __gen_args_installer
     printf "%sExecuting installer setup..."
-    cygstart -w --action=runas "$gdc_ext_path/setup.exe" "$gdc_installer_args"
+    "$gdc_cygstart" -w --action=runas "$gdc_ext_path/setup.exe" "$gdc_installer_args"
     local code="$?"
     printf "Done\n"
     return "$code"
@@ -257,42 +313,61 @@ __eval_ver_installed () {
     __get_ver_installed
     [ "$gdc_installed_ver" -eq "$gdc_latest_ver" ]
 }
-__exec_proc_szip () {
-    __check_command 7za && { gdc_s7bin="7za"; return 0; }
-    __find_path_szip || __wget_szip || return 1
-    [ -z "$gdc_seven_zip" ] && __log_error "can't find 7-Zip installation, please install 7-Zip."
-    __ask "7z.exe found. Create symbolic link for 7-Zip?" || { gdc_s7bin="$gdc_seven_zip"; return 0; }
-    local binpath="$(dirname "$(which ls)")"
-    __check_path "$binpath" && ln -s "$gdc_seven_zip" "$binpath"
+__ext_deps () {
+    $gdc_cache_enable && __load_cache
+    [ -e "$gdc_path/dep_binaries.tar.xz" ] || __log_error "missing \"$gdc_path/dep_binaries.tar.xz\""
+    "$gdc_tar" -C "$gdc_path" -xf "$gdc_path/dep_binaries.tar.xz" $@ || return 1
 }
-__find_path_szip () {
-    local pfiles="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files"
-    local find="$(find "$pfiles" "$pfiles (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
-    for i in $find; do
-        [ -x "$i" ] && __check_command "$i" && { gdc_seven_zip="$i"; return 0; }
-    done
-    return 1
+__add_dep () {
+    if $gdc_cache_enable; then
+        __check_cache "$1" "$2" && return 0
+        __write_cache "$1" "$2" false
+    fi
+    [ -n "$gdc_binlist" ] && gdc_binlist="bin/$2.exe" || gdc_binlist="$gdc_binlist bin/$2.exe"
 }
-__exec_msi_szip () {
-    local msiexec="$(cygpath -S)/msiexec.exe"
-    __check_file x "$msiexec" || return 1
-    __ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local passive="/passive"
-    cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "$gdc_dl_path/7z922-x64.msi")" || return 1
-}
-__wget_szip () {
-    local url="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
-    __ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
-    __get_path_download || { printf "error getting download path, try [-d /path]"; return 1; }
-    wget -U "$gdc_wget_usr_agent" --no-cookies -N --no-check-certificate -P "$gdc_dl_path" "$url" && { __exec_msi_szip || return 1; } || return 1
-    __find_path_szip
+__check_cmd () {
+    [ "$3" = true ] && return 1
+    [ "$1" = "grep" ] && gdc_grep="grep"
+    [ "$1" = "sed" ] && gdc_sed="sed"
+    if $gdc_cache_enable; then
+        if [ "$2" = false ]; then
+            if command -v "$1" >/dev/null 2>&1; then
+                [ "$1" = "grep" ] && gdc_grep="grep"
+                [ "$1" = "sed" ] && gdc_sed="sed"
+                __check_cache "$1" || __write_cache gdc_$1 $gdc_$1
+                return 0
+            else
+                return 1
+            fi
+        fi
+        __check_cache "$1" && return 0
+        __write_cache "$1" "$2" && return 0
+        local cmd="$2"
+    fi
+    local cmd="$1"
+    command -v "$cmd" >/dev/null 2>&1
 }
 __check_deps () {
-    local deps="uname cygpath find sed cygstart grep wget 7z wmic tar gzip logger"
+    local deps="tar grep sed wmic uname cygpath cygstart wget 7za awk"
+    local dbg=false #debug
+    local gdc_path="$gdc_path/bin"
+    __check_cmd grep || { gdc_grep="$gdc_path/grep.exe"; __write_cache gdc_grep $gdc_grep; }
+    __check_cmd sed || { gdc_sed="$gdc_path/sed.exe"; __write_cache gdc_sed $gdc_sed; }
     for dep in $deps; do
+        local gdc_dep="$gdc_path/$dep.exe"
         case "$dep" in
-             wmic) __check_command wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; __check_command wmic || __log_error "adding wmic to PATH" ;;
-               7z) __check_command 7z && gdc_s7bin="7z" || { __exec_proc_szip || __log_error "Dependency not found :: 7z (7-Zip)"; } ;;
-                *) __check_command "$dep" || __log_error "Dependency not found :: $dep" ;;
+             tar)  gdc_tar="$dep"; __check_cmd gdc_$dep $dep $dbg || { __add_dep gdc_$dep $gdc_dep; gdc_tar="$gdc_dep"; };;
+           uname)  gdc_uname="$dep"; __check_cmd gdc_$dep $dep $dbg || { __add_dep gdc_$dep $gdc_dep; gdc_uname="$gdc_dep"; };;
+         cygpath)  gdc_cygpath="$dep"; __check_cmd gdc_$dep $dep $dbg || { __add_dep gdc_$dep $gdc_dep; gdc_cygpath="$gdc_dep"; };;
+        cygstart)  gdc_cygstart="$dep"; __check_cmd gdc_$dep $dep $dbg || { __add_dep gdc_$dep $gdc_dep; gdc_cygstart="$gdc_dep"; };;
+            wget)  gdc_wget="$dep"; __check_cmd gdc_$dep $dep $dbg || { __add_dep gdc_$dep $gdc_dep; gdc_wget="$gdc_dep"; };;
+             7za)  gdc_7za="$dep"; __check_cmd gdc_$dep $dep $dbg || { __add_dep gdc_$dep $gdc_dep; gdc_7za="$gdc_dep"; };;
+             awk)  gdc_awk="$dep"; __check_cmd gdc_$dep $dep $dbg || { __add_dep gdc_$dep $gdc_dep; gdc_awk="$gdc_dep"; };;
+            wmic)  __check_cmd wmic || { PATH="${PATH}:$("$gdc_cygpath" -S)/Wbem"
+                        __check_cmd wmic || __log_error "adding wmic to PATH"; }
+               ;;
+               #*)  __check_cmd "$dep" || __log_error "Dependency not found :: $dep" ;;
         esac
+        [ -n "$gdc_deplist" ] && { __ext_deps "$gdc_binlist" || __log_error "Error extracting binary dependencies"; }
     done
 }

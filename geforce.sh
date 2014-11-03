@@ -1,4 +1,6 @@
-#!/usr/bin/env sh
+#!/bin/bash
+##!/usr/bin/env sh
+
 # NAME: Geforce Driver Check (GDC) geforce-driver-check
 # DESC: Checks for new Nvidia Display Drivers then does an automatted unattended install, or with many more options.
 # GIT: git@github.com:jonretting/geforce-driver-check.git
@@ -19,7 +21,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-gdc_version="1.0917"
+gdc_version="1.0918"
 
 # determines absolute parent path of geforce.sh execution
 # allows use of symlink/alias/function geforce.sh execution
@@ -41,6 +43,9 @@ __get_path_gdc || printf "Error determining GDC path\n"
 # source in functions and user configurable options
 . "$gdc_path/func.sh"
 . "$gdc_path/config.conf"
+
+# load in cache file
+$gdc_cache_enable && __get_cache
 
 # process command line options/arguements
 __get_options "$@" && shift $((OPTIND-1))
@@ -66,6 +71,7 @@ __get_data_net || __log_error "in online data query :: $gdc_file_data"
 __get_ver_latest || __log_error "invalid driver version string :: $gdc_latest_ver"
 __get_ver_installed || __log_error "invalid driver version string :: $gdc_installed_ver"
 __eval_versions
+gdc_update=false
 $gdc_check_only && { $gdc_update && exit 0 || exit 1; }
 $gdc_update || $gdc_reinstall || exit 0
 __get_filename_latest || __log_error "invalid file name returned :: $gdc_file_name"
@@ -79,8 +85,8 @@ elif $gdc_update; then
     __wget_latest_driver || __log_error "wget downloading file :: $gdc_download_url"
 fi
 __check_mkdir "$gdc_root_path/NVIDIA" || __log_error "creating path :: $gdc_root_path/NVIDIA"
-__ext_7z_latest_driver || __log_error "extracting new driver archive :: $gdc_ext_path"
-__exec_installer || __log_error "Installation failed or user interupted"
+#__ext_7z_latest_driver || __log_error "extracting new driver archive :: $gdc_ext_path"
+#__exec_installer || __log_error "Installation failed or user interupted"
 __get_ver_installed true || __log_error "invalid driver version string :: $gdc_installed_ver"
 __eval_ver_installed || __log_error "After all that your driver version didn't change!"
 printf "Driver update successfull!"
