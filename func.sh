@@ -43,7 +43,7 @@ __print_usage () {
 }
 __get_options () {
     __get_defaults
-    local opts="asyd:cRVCAirh"
+    local opts="asyd:cRVCAirUh"
     while getopts "$opts" gdc_options; do
         case "$gdc_options" in
             a) gdc_attended=true ;;
@@ -57,6 +57,7 @@ __get_options () {
             A) gdc_attended=true; gdc_excl_pkgs=;;
             i) gdc_use_intl=true ;;
             r) gdc_use_reboot_prompt=true ;;
+            U) gdc_rm_old_drivers=true ;;
             h) __print_usage; exit 0 ;;
             *) __print_usage; exit 1 ;;
         esac
@@ -72,6 +73,7 @@ __get_defaults () {
     gdc_use_reboot_prompt=false
     gdc_update=false
     gdc_fail=false
+    gdc_rm_old_drivers=false
 }
 __ask () {
     while true; do
@@ -233,8 +235,8 @@ __wget_latest_driver () {
 }
 __ext_7z_latest_driver () {
     printf "%sExtracting new driver archive..."
-    local src="$(cygpath -wa "$gdc_dl_path/$gdc_file_name")"
-    gdc_ext_path="$gdc_ext_path\GDC-$gdc_latest_ver-$(date +%m%y%S)"
+    local src="$gdc_dl_path/$gdc_file_name"
+    gdc_ext_path="$(cygpath "$gdc_ext_path\GDC-$gdc_latest_ver-$(date +%m%y%S)")"
     "$gdc_path/bin/7za.exe" x "$src" -o"$gdc_ext_path" $(printf -- '-xr!%s ' $gdc_excl_pkgs) -y >/dev/null 2>&1 && printf "Done\n"
 }
 __gen_args_installer () {
@@ -251,6 +253,22 @@ __exec_installer () {
     local code="$?"
     printf "Done\n"
     return "$code"
+}
+__rm_old_drivers () {
+    local ver="$(printf "%s$gdc_installed_ver" | sed 's/./.&/2')"
+    local data="$(PnPutil -e | grep -B2 -A3 "Display adapters" | grep -B1 -A2 NVIDIA)"
+    local new="$(printf "%s$data" | grep -B3 -A1 "$ver" | awk '/oem/ {print $4}')"
+    printf "%sThe following drivers have been found:\n\n$data\n\n"
+    printf "Removing old installed drivers...\n\n"
+    for i in "$(printf "$data" | awk '/oem/ {print $4}')"; do
+        if [ "$i" = "$new" ]; then
+            printf "%sSkipping $i $gdc_installed_ver_name -- currently installed\n"
+        else
+            printf "%sRemoving $i..."
+            PnPutil -d $i && printf "Done\n" || printf "Failed\n"
+        fi
+    done
+    printf "\n"
 }
 __eval_ver_installed () {
     __get_data_installed

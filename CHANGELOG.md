@@ -2,6 +2,16 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.0920:
+- removed 7z auto download and symlink functionality
+- added 7za to replace 7z
+- added 7za binary to GDC
+- added 7za dependency check
+- beta -U arg to remove previous driver version using windows PnPUtil
+- added ShieldWirelessController and GfExperienceService to excluxed list
+- rename func.src to func.sh
+- update wget Mozilla user agent rv to 34.0
+
 #### 1.0915-1:
 - fixed pathing issue
 

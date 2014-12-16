@@ -3,15 +3,27 @@ edGeforce Driver Check (GDC)
 ### Checks for new Nvidia Display Drivers then does an automated unattended install, or with many more options.
 Copyright (c) 2014 Jon Retting
 
+`git clone https://github.com/jonretting/geforce-driver-check.git`
+
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.915-1](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.920](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
+#### [v1.0915-1](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-10915-1.zip/download)
 #### [v1.082](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.082.zip/download)
-#### [v1.082](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.078.zip/download)
 
 ### Release Notes:
+
+#### 1.0920:
+- removed 7z auto download and symlink functionality
+- added 7za to replace 7z
+- added 7za binary to GDC
+- added 7za dependency check
+- beta -U arg to remove previous driver version using windows PnPUtil
+- added ShieldWirelessController and GfExperienceService to excluxed list
+- rename func.src to func.sh
+- update wget Mozilla user agent rv to 34.0
 
 #### 1.0915-1:
 - fixed pathing issue
@@ -25,7 +37,7 @@ Copyright (c) 2014 Jon Retting
 - removed superfluous files
 - update README info
 
-#### 1.09 : (GitHub only)
+#### 1.09 :
 - removed various bashisms
 
 #### 1.082 :
@@ -35,16 +47,6 @@ Copyright (c) 2014 Jon Retting
 - use double underscore for function names
 - switch all variables to lowercase
 - add additional recursive mkdir error handling
-
-#### 1.078 :
-- improve naming conventions
-- replace all echo's with printf
-- remove eronious unimplemented vars and conditions
-- improve excluded package array handling for 7z extraction
-- add more return code handling for fallback cd
-- drop pointless cat commands
-- drop sed for substring match replacement
-- add quoting to prevent some word splitting where possible
 
 INFO:
 -----
