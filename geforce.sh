@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-gdc_version="1.0917"
+gdc_version="1.0918"
 
 # determines absolute parent path of geforce.sh execution
 # allows use of symlink/alias/function geforce.sh execution
@@ -67,6 +67,7 @@ __get_ver_latest || __log_error "invalid driver version string :: $gdc_latest_ve
 __get_ver_installed || __log_error "invalid driver version string :: $gdc_installed_ver"
 __eval_versions
 $gdc_check_only && { $gdc_update && exit 0 || exit 1; }
+gdc_update=true
 $gdc_update || $gdc_reinstall || exit 0
 __get_filename_latest || __log_error "invalid file name returned :: $gdc_file_name"
 __get_uri_driver || __log_error "validating driver download uri :: $gdc_download_url"
@@ -79,8 +80,7 @@ elif $gdc_update; then
     __wget_latest_driver || __log_error "wget downloading file :: $gdc_download_url"
 fi
 __check_mkdir "$gdc_root_path/NVIDIA" || __log_error "creating path :: $gdc_root_path/NVIDIA"
-__ext_7z_latest_driver || __log_error "extracting new driver archive :: $gdc_ext_path"
-__exec_installer || __log_error "Installation failed or user interupted"
+#__exec_installer || __log_error "Installation failed or user interupted"
 __get_ver_installed true || __log_error "invalid driver version string :: $gdc_installed_ver"
 __eval_ver_installed || __log_error "After all that your driver version didn't change!"
 printf "Driver update successfull!"

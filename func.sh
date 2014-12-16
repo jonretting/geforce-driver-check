@@ -235,7 +235,7 @@ __ext_7z_latest_driver () {
     printf "%sExtracting new driver archive..."
     local src="$(cygpath -wa "$gdc_dl_path/$gdc_file_name")"
     gdc_ext_path="$gdc_ext_path\GDC-$gdc_latest_ver-$(date +%m%y%S)"
-    "$gdc_s7bin" x "$src" -o"$gdc_ext_path" $(printf -- '-xr!%s ' $gdc_excl_pkgs) -y >/dev/null 2>&1 && printf "Done\n"
+    "$gdc_path/bin/7za.exe" x "$src" -o"$gdc_ext_path" $(printf -- '-xr!%s ' $gdc_excl_pkgs) -y >/dev/null 2>&1 && printf "Done\n"
 }
 __gen_args_installer () {
     gdc_installer_args="-nofinish -passive -nosplash -noeula"
@@ -257,41 +257,11 @@ __eval_ver_installed () {
     __get_ver_installed
     [ "$gdc_installed_ver" -eq "$gdc_latest_ver" ]
 }
-__exec_proc_szip () {
-    __check_command 7za && { gdc_s7bin="7za"; return 0; }
-    __find_path_szip || __wget_szip || return 1
-    [ -z "$gdc_seven_zip" ] && __log_error "can't find 7-Zip installation, please install 7-Zip."
-    __ask "7z.exe found. Create symbolic link for 7-Zip?" || { gdc_s7bin="$gdc_seven_zip"; return 0; }
-    local binpath="$(dirname "$(which ls)")"
-    __check_path "$binpath" && ln -s "$gdc_seven_zip" "$binpath"
-}
-__find_path_szip () {
-    local pfiles="$(cd -P "$(cygpath -W)"; cd .. && pwd)/Program Files"
-    local find="$(find "$pfiles" "$pfiles (x86)" -maxdepth 2 -type f -name "7z.exe" -print)"
-    for i in $find; do
-        [ -x "$i" ] && __check_command "$i" && { gdc_seven_zip="$i"; return 0; }
-    done
-    return 1
-}
-__exec_msi_szip () {
-    local msiexec="$(cygpath -S)/msiexec.exe"
-    __check_file x "$msiexec" || return 1
-    __ask "1) Unattended 7-Zip install 2) Launch 7-Zip Installer" "1/2" && local passive="/passive"
-    cygstart -w --action=runas "$msiexec" $passive /norestart /i "$(cygpath -wal "$gdc_dl_path/7z922-x64.msi")" || return 1
-}
-__wget_szip () {
-    local url="https://downloads.sourceforge.net/project/sevenzip/7-Zip/9.22/7z922-x64.msi"
-    __ask "Download 7-Zip v9.22 x86_64 msi package?" || return 1
-    __get_path_download || { printf "error getting download path, try [-d /path]"; return 1; }
-    wget -U "$gdc_wget_usr_agent" --no-cookies -N --no-check-certificate -P "$gdc_dl_path" "$url" && { __exec_msi_szip || return 1; } || return 1
-    __find_path_szip
-}
 __check_deps () {
-    local deps="uname cygpath find sed cygstart grep wget 7z wmic tar gzip logger"
+    local deps="uname cygpath find sed cygstart grep wget 7za wmic tar gzip logger"
     for dep in $deps; do
         case "$dep" in
              wmic) __check_command wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; __check_command wmic || __log_error "adding wmic to PATH" ;;
-               7z) __check_command 7z && gdc_s7bin="7z" || { __exec_proc_szip || __log_error "Dependency not found :: 7z (7-Zip)"; } ;;
                 *) __check_command "$dep" || __log_error "Dependency not found :: $dep" ;;
         esac
     done
