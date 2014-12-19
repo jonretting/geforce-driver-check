@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-gdc_version="1.0920"
+gdc_version="1.0921"
 
 # determines absolute parent path of geforce.sh execution
 # allows use of symlink/alias/function geforce.sh execution
@@ -81,6 +81,7 @@ elif $gdc_update; then
 fi
 __check_mkdir "$gdc_root_path/NVIDIA" || __log_error "creating path :: $gdc_root_path/NVIDIA"
 __ext_7z_latest_driver || __log_error "extracting new driver archive :: $gdc_ext_path"
+__check_file x "$gdc_ext_path/setup.exe" || { chmod -R +x "$gdc_ext_path" || __log_error "Applying permssions to downloaded path :: $gdc_ext_path"; }
 __exec_installer || __log_error "Installation failed or user interupted"
 __get_ver_installed true || __log_error "invalid driver version string :: $gdc_installed_ver"
 __eval_ver_installed || __log_error "After all that your driver version didn't change!"
