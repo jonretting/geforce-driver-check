@@ -8,12 +8,16 @@ Copyright (c) 2014 Jon Retting
 - [GDC Github repo](https://github.com/jonretting/geforce-driver-check)
 - [GDC on SourceForge](https://sourceforge.net/projects/geforce-driver-check/)
 
-### [Latest v1.920](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
+### [Latest v1.921](https://sourceforge.net/projects/geforce-driver-check/files/latest/download)
 
 #### [v1.0915-1](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-10915-1.zip/download)
 #### [v1.082](https://sourceforge.net/projects/geforce-driver-check/files/geforce-driver-check-1.082.zip/download)
 
 ### Release Notes:
+
+#### 1.0921:
+- added checks for 7za extracted windows ACLs
+- fixed fixed not being able to execute installer
 
 #### 1.0920:
 - removed 7z auto download and symlink functionality
@@ -39,14 +43,6 @@ Copyright (c) 2014 Jon Retting
 
 #### 1.09 :
 - removed various bashisms
-
-#### 1.082 :
-- bug fix filename validation per extraction error
-- include 7za as valid 7z binary dependency
-- add 337.50 Desktop Devices hwid list
-- use double underscore for function names
-- switch all variables to lowercase
-- add additional recursive mkdir error handling
 
 INFO:
 -----

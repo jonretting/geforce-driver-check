@@ -2,6 +2,10 @@ Geforce Driver Check (GDC)
 ==========================
 ### CHANGE LOG NOTES:
 
+#### 1.0921:
+- added checks for 7za extracted windows ACLs
+- fixed fixed not being able to execute installer
+
 #### 1.0920:
 - removed 7z auto download and symlink functionality
 - added 7za to replace 7z
