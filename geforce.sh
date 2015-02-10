@@ -19,7 +19,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-gdc_version="1.0921"
+gdc_version="1.0922"
 
 # determines absolute parent path of geforce.sh execution
 # allows use of symlink/alias/function geforce.sh execution

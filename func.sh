@@ -276,7 +276,7 @@ __eval_ver_installed () {
     [ "$gdc_installed_ver" -eq "$gdc_latest_ver" ]
 }
 __check_deps () {
-    local deps="uname cygpath find sed cygstart grep wget 7za wmic tar gzip logger"
+    local deps="uname cygpath find sed cygstart grep wget 7za wmic tar gzip logger cut awk dirname readlink tee stat rm PnPutil"
     for dep in $deps; do
         case "$dep" in
              wmic) __check_command wmic || PATH="${PATH}:$(cygpath -S)/Wbem"; __check_command wmic || __log_error "adding wmic to PATH" ;;
