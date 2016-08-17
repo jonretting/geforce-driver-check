@@ -182,10 +182,10 @@ __get_ver_installed () {
 }
 __get_desc_adapter () {
     gdc_notebook=false
-    gdc_vid_desc="$(printf "%s$gdc_installed_data" | awk -F\= '/NVIDIA/ {print $2}')"
-    [ -z "$gdc_vid_desc" ] && return 1
-    grep -wqs "$gdc_vid_desc" "$gdc_path/devices_notebook.txt" && { gdc_notebook=true; return 0; }
-    grep -wqs "$gdc_vid_desc" "$gdc_path/devices_desktop.txt" || return 1
+    #gdc_vid_desc="$(printf "%s$gdc_installed_data" | awk -F\= '/NVIDIA/ {print $2}')"
+    #[ -z "$gdc_vid_desc" ] && return 1
+    #grep -wqs "$gdc_vid_desc" "$gdc_path/devices_notebook.txt" && { gdc_notebook=true; return 0; }
+    #grep -wqs "$gdc_vid_desc" "$gdc_path/devices_desktop.txt" || return 1
 }
 __check_url () {
     wget -U "$gdc_wget_usr_agent" --no-cookies -t 1 -T 3 -q --spider "$1"
